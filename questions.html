@@ -29,7 +29,7 @@
 <body>
 
 <nav class="top-nav">
-  <div class="nav-brand">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer">
     <div class="nav-logo">📚</div>
     <div class="nav-title">প্রশ্নোত্তর</div>
   </div>
@@ -310,7 +310,7 @@ async function loadAnswers(questionId, questionOwnerId) {
           <div class="action-row">
             <button class="action-btn" onclick="voteAnswer('${d.id}')">👍 ${a.votes||0}</button>
             ${user && user.uid === questionOwnerId && !isBest ? `<button class="action-btn" style="color:var(--accent)" onclick="markBestAnswer('${questionId}','${d.id}')">⭐ সেরা</button>` : ''}
-            ${user && (user.uid === a.userId) ? `<button class="action-btn" style="color:var(--danger)" onclick="deleteAnswer('${d.id}','${questionId}')">🗑️</button>` : ''}
+            ${user && (user.uid === a.userId || window._isAdmin) ? `<button class="action-btn" style="color:var(--danger)" onclick="deleteAnswer('${d.id}','${questionId}')">🗑️</button>` : ''}
           </div>
         </div>
       `;
@@ -447,33 +447,4 @@ async function submitAnswer() {
       votes: 0, voters: [], isBest: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    await db.collection('questions').doc(currentQId).update({
-      answerCount: firebase.firestore.FieldValue.increment(1)
-    });
-    await addPoints(auth.currentUser.uid, 15, 'answer_posted');
-    showToast('উত্তর পোস্ট হয়েছে! +15 পয়েন্ট 🎉', 'success');
-    document.getElementById('answer-text').value = '';
-    ansImgUploader.clear();
-    const q = allQuestions.find(q => q.id === currentQId);
-    if (q) { q.answerCount = (q.answerCount||0) + 1; renderQuestions(); }
-    loadAnswers(currentQId, q?.userId);
-  } catch(e) { showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); }
-  setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
-}
-
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-function timeAgo(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (s < 60) return 'এইমাত্র';
-  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
-  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
-  return `${Math.floor(s/86400)} দিন আগে`;
-}
-</script>
-</body>
-</html>
+    await db.collection('questions').doc(currentQId).up
