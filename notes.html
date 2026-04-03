@@ -345,7 +345,7 @@ function openNoteDetailData(note) {
     ${note.fileURL ? `<a href="${note.fileURL}" target="_blank" class="btn btn-primary btn-full mt-12">📄 PDF ডাউনলোড করুন</a>` : ''}
     <div class="action-row">
       <button class="action-btn" id="vote-btn" onclick="voteNote('${note.id}')">👍 <span id="vote-count">${note.votes||0}</span></button>
-      ${currentUser && (currentUser.uid === note.uploaderId) ?
+      ${currentUser && (currentUser.uid === note.uploaderId || window._isAdmin) ?
         `<button class="action-btn" style="margin-left:auto;color:var(--danger)" onclick="deleteNote('${note.id}')">🗑️ মুছুন</button>` : ''}
     </div>
   `;
@@ -428,8 +428,10 @@ async function submitNote() {
     const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
     const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
 
+    const tagsRaw = document.getElementById('note-tags').value.trim();
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [];
     const noteRef = await db.collection('notes').add({
-      title, subject, class: cls, description: desc,
+      title, subject, class: cls, description: desc, tags,
       imageURL, fileURL,
       uploaderId: auth.currentUser.uid, uploaderName: userName,
       votes: 0, voters: [],
@@ -479,4 +481,5 @@ function timeAgo(ts) {
 }
 </script>
 </body>
-</html>
+  </html>
+  
