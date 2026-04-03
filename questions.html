@@ -487,17 +487,17 @@ async function submitAnswer() {
       renderQuestions(); 
     }
     
-    loadAnswers(currentQId, allQuestions[qIndex]?.userId);
-
+        loadAnswers(currentQId, allQuestions[qIndex]?.userId);
   } catch(e) { 
     showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); 
     if (progBar) progBar.style.display = 'none';
   }
-        setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
+  setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
 }
 
-// মডাল ক্লোজিং লজিক (এটি এখানে পেস্ট করে দিন)
+// মডাল ক্লোজিং লজিক
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
 });
+  
 </script>
