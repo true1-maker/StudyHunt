@@ -237,7 +237,8 @@ function setupUploadZone(zoneId, previewId, acceptTypes = 'image/*') {
     }
   }
 
-  return { getFile: () => selectedFile, clear: () => {
+  return { getFile: () => (window.lastClearedZone === zoneId) ? (selectedFile = null) : selectedFile,
+          clear: () => {
     selectedFile = null;
     if (preview) preview.innerHTML = '';
     if (input) input.value = '';
