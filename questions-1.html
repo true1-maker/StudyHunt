@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — প্রশ্নোত্তর</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .q-card { margin-bottom: 12px; cursor: pointer; }
+    .q-card:hover { box-shadow: var(--shadow); }
+    .q-title { font-size: .95rem; font-weight: 600; line-height: 1.4; margin-bottom: 6px; }
+    .q-img { width: 100%; max-height: 150px; object-fit: cover; border-radius: var(--radius-sm); margin: 8px 0; }
+    .answer-item {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--border);
+    }
+    .answer-item.best { border-left-color: var(--accent); background: var(--accent-light); }
+    .best-badge { display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:#b37400;background:var(--accent-light);padding:2px 8px;border-radius:var(--radius-full);margin-bottom:6px; }
+    .answer-text { font-size: .875rem; line-height: 1.6; }
+    .answer-img { width: 100%; border-radius: var(--radius-sm); max-height: 200px; object-fit: contain; margin-top: 8px; }
+    .answer-form { background: var(--bg); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+    .upload-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 6px; display: none; }
+    .upload-progress-fill { height: 100%; background: var(--primary); transition: width .3s; }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-brand">
+    <div class="nav-logo">📚</div>
+    <div class="nav-title">প্রশ্নোত্তর</div>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">❓ প্রশ্নোত্তর</div>
+    <div class="page-subtitle">প্রশ্ন করুন, উত্তর দিন, জ্ঞান ভাগ করুন</div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input" placeholder="প্রশ্ন খুঁজুন..." oninput="filterQuestions()">
+  </div>
+
+  <div class="chip-scroll" id="subject-chips"></div>
+
+  <!-- Sort buttons -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="chip active" id="sort-new" onclick="setSortOrder('new', this)">🕐 নতুন</button>
+    <button class="chip" id="sort-votes" onclick="setSortOrder('votes', this)">🔥 ট্রেন্ডিং</button>
+    <button class="chip" id="sort-unanswered" onclick="setSortOrder('unanswered', this)">❓ উত্তরবিহীন</button>
+  </div>
+
+  <div id="questions-list">
+    <div class="skeleton" style="height:100px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:100px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:100px;border-radius:12px"></div>
+  </div>
+  <div id="questions-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">❓</div>
+    <div class="empty-title">কোনো প্রশ্ন নেই</div>
+    <div class="empty-desc">প্রথম প্রশ্নটি করুন!</div>
+    <button class="btn btn-primary btn-sm" onclick="openAskModal()">প্রশ্ন করুন</button>
+  </div>
+</div>
+
+<button class="fab" onclick="openAskModal()" title="প্রশ্ন করুন">✏️</button>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="index.html"><span class="nav-icon">🏠</span><span class="nav-label">হোম</span></a>
+  <a class="bottom-nav-item" href="notes.html"><span class="nav-icon">📝</span><span class="nav-label">নোটস</span></a>
+  <a class="bottom-nav-item active" href="questions.html"><span class="nav-icon">❓</span><span class="nav-label">প্রশ্ন</span></a>
+  <a class="bottom-nav-item" href="quiz.html"><span class="nav-icon">📊</span><span class="nav-label">কুইজ</span></a>
+  <a class="bottom-nav-item" href="profile.html"><span class="nav-icon">👤</span><span class="nav-label">প্রোফাইল</span></a>
+</nav>
+
+<!-- ASK QUESTION MODAL -->
+<div class="modal-overlay" id="ask-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✏️ নতুন প্রশ্ন করুন</div>
+    <div class="form-group">
+      <label class="form-label">প্রশ্নের শিরোনাম *</label>
+      <input type="text" id="q-title" class="form-control" placeholder="সংক্ষেপে প্রশ্নটি লিখুন">
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিষয় *</label>
+      <select id="q-subject" class="form-control">
+        <option value="">বিষয় নির্বাচন করুন</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিস্তারিত (ঐচ্ছিক)</label>
+      <textarea id="q-desc" class="form-control" placeholder="প্রশ্নের বিস্তারিত লিখুন..." rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">📷 প্রশ্নের ছবি (ঐচ্ছিক) — গণিতের সমস্যা বা যেকোনো ছবি</label>
+      <div class="upload-zone" id="q-img-zone">
+        <input type="file" accept="image/*" capture="environment" id="q-img-input">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">ক্যামেরায় ছবি তুলুন বা গ্যালারি থেকে বেছে নিন</div>
+        <div class="upload-hint">সর্বোচ্চ ৫MB</div>
+      </div>
+      <div id="q-img-preview"></div>
+      <div class="upload-progress" id="q-img-prog"><div class="upload-progress-fill" id="q-img-fill"></div></div>
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" id="btn-ask" onclick="submitQuestion()">🚀 প্রশ্ন প্রকাশ করুন</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeAskModal()">বাতিল</button>
+  </div>
+</div>
+
+<!-- QUESTION DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-height:92vh">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+    <!-- Answer form -->
+    <div class="answer-form" id="answer-form-wrap">
+      <div style="font-weight:600;font-size:.9rem;margin-bottom:10px">💬 উত্তর দিন</div>
+      <textarea id="answer-text" class="form-control" placeholder="আপনার উত্তর লিখুন..." rows="3"></textarea>
+      <div style="margin-top:10px">
+        <label style="font-size:.8rem;font-weight:500;color:var(--text-muted);display:block;margin-bottom:6px">📷 উত্তরের ছবি (ঐচ্ছিক)</label>
+        <div class="upload-zone" id="ans-img-zone" style="padding:14px">
+          <input type="file" accept="image/*" capture="environment" id="ans-img-input">
+          <div style="font-size:1.4rem">📷</div>
+          <div style="font-size:.8rem;color:var(--text-muted)">ছবি যোগ করুন</div>
+        </div>
+        <div id="ans-img-preview"></div>
+        <div class="upload-progress" id="ans-img-prog"><div class="upload-progress-fill" id="ans-img-fill"></div></div>
+      </div>
+      <button class="btn btn-primary btn-full mt-8" id="btn-answer" onclick="submitAnswer()">✅ উত্তর পোস্ট করুন</button>
+    </div>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeDetailModal()">বন্ধ করুন</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allQuestions = [];
+let activeSubject = 'সব বিষয়';
+let sortOrder = 'new';
+let currentQId = null;
+let qImgUploader, ansImgUploader;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Subject chips
+  const chips = document.getElementById('subject-chips');
+  SUBJECTS.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (s === 'সব বিষয়' ? ' active' : '');
+    chip.textContent = s;
+    chip.onclick = () => {
+      activeSubject = s;
+      document.querySelectorAll('#subject-chips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderQuestions();
+    };
+    chips.appendChild(chip);
+  });
+
+  // Subject select in modal
+  const sel = document.getElementById('q-subject');
+  SUBJECTS.filter(s => s !== 'সব বিষয়').forEach(s => sel.appendChild(new Option(s, s)));
+
+  qImgUploader  = setupUploadZone('q-img-zone', 'q-img-preview');
+  ansImgUploader = setupUploadZone('ans-img-zone', 'ans-img-preview');
+
+  loadQuestions();
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (id) { currentQId = id; openQuestionDetail(id); }
+});
+
+function setSortOrder(order, btn) {
+  sortOrder = order;
+  document.querySelectorAll('[id^="sort-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderQuestions();
+}
+
+async function loadQuestions() {
+  try {
+    const snap = await db.collection('questions').orderBy('createdAt', 'desc').limit(50).get();
+    allQuestions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderQuestions();
+  } catch(e) {
+    showToast('প্রশ্ন লোড করা সম্ভব হয়নি', 'error');
+  }
+}
+
+function filterQuestions() { renderQuestions(); }
+
+function renderQuestions() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  let filtered = [...allQuestions];
+  if (activeSubject !== 'সব বিষয়') filtered = filtered.filter(q => q.subject === activeSubject);
+  if (query) filtered = filtered.filter(q =>
+    (q.title||'').toLowerCase().includes(query) ||
+    (q.description||'').toLowerCase().includes(query)
+  );
+  if (sortOrder === 'votes') filtered.sort((a,b) => (b.votes||0) - (a.votes||0));
+  if (sortOrder === 'unanswered') filtered = filtered.filter(q => !q.answerCount || q.answerCount === 0);
+
+  const list  = document.getElementById('questions-list');
+  const empty = document.getElementById('questions-empty');
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = filtered.map(q => `
+    <div class="card q-card" onclick="openQuestionDetail('${q.id}')">
+      <div class="user-row mb-8">
+        <div class="avatar avatar-sm avatar-placeholder">${(q.userName||'?').charAt(0)}</div>
+        <div class="user-row-info">
+          <div class="user-name">${q.userName||'Anonymous'}</div>
+          <div class="user-time">${timeAgo(q.createdAt)}</div>
+        </div>
+        <span class="badge badge-primary">${q.subject||''}</span>
+      </div>
+      <div class="q-title">${q.title||''}</div>
+      ${q.imageURL ? `<img src="${q.imageURL}" class="q-img" alt="Question">` : ''}
+      <div class="card-meta">
+        <span>👍 ${q.votes||0}</span>
+        <span>💬 ${q.answerCount||0} উত্তর</span>
+        <span>${!q.answerCount ? '<span class="badge badge-danger" style="font-size:.65rem">উত্তরের অপেক্ষায়</span>' : '<span class="badge badge-primary" style="font-size:.65rem">✅ উত্তর আছে</span>'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openQuestionDetail(id) {
+  currentQId = id;
+  const q = allQuestions.find(q => q.id === id) || await getQuestion(id);
+  if (!q) return;
+
+  const user = auth.currentUser;
+  document.getElementById('detail-content').innerHTML = `
+    <div class="user-row mb-8">
+      <div class="avatar avatar-sm avatar-placeholder">${(q.userName||'?').charAt(0)}</div>
+      <div class="user-row-info">
+        <div class="user-name">${q.userName||'Anonymous'}</div>
+        <div class="user-time">${timeAgo(q.createdAt)}</div>
+      </div>
+      <span class="badge badge-primary">${q.subject||''}</span>
+    </div>
+    <h3 style="font-size:1rem;font-weight:700;line-height:1.4;margin-bottom:8px">${q.title||''}</h3>
+    ${q.description ? `<p style="font-size:.875rem;color:var(--text-muted);margin-bottom:8px">${q.description}</p>` : ''}
+    ${q.imageURL ? `<img src="${q.imageURL}" style="width:100%;border-radius:var(--radius);max-height:220px;object-fit:contain;background:var(--bg);margin-bottom:12px">` : ''}
+    <div class="action-row" style="margin-bottom:16px">
+      <button class="action-btn" onclick="voteQuestion('${q.id}')">👍 ${q.votes||0} ভোট</button>
+      ${user && user.uid === q.userId ? `<button class="action-btn" style="margin-left:auto;color:var(--danger)" onclick="deleteQuestion('${q.id}')">🗑️</button>` : ''}
+    </div>
+    <div style="font-weight:700;font-size:.9rem;margin-bottom:10px">💬 উত্তরসমূহ <span style="color:var(--text-muted);font-weight:400">(${q.answerCount||0})</span></div>
+    <div id="answers-list">
+      <div class="spinner" style="margin:16px auto"></div>
+    </div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+  loadAnswers(id, q.userId);
+}
+
+async function getQuestion(id) {
+  const snap = await db.collection('questions').doc(id).get();
+  return snap.exists ? { id: snap.id, ...snap.data() } : null;
+}
+
+async function loadAnswers(questionId, questionOwnerId) {
+  const list = document.getElementById('answers-list');
+  try {
+    const snap = await db.collection('answers')
+      .where('questionId', '==', questionId)
+      .orderBy('votes', 'desc').get();
+    if (snap.empty) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:16px">এখনো কোনো উত্তর নেই। প্রথম উত্তর দিন!</p>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const a = d.data();
+      const isBest = a.isBest;
+      const user = auth.currentUser;
+      return `
+        <div class="answer-item ${isBest ? 'best' : ''}">
+          ${isBest ? '<div class="best-badge">⭐ সেরা উত্তর</div>' : ''}
+          <div class="user-row mb-8">
+            <div class="avatar avatar-sm avatar-placeholder">${(a.userName||'?').charAt(0)}</div>
+            <div class="user-row-info">
+              <div class="user-name">${a.userName||'Anonymous'}</div>
+              <div class="user-time">${timeAgo(a.createdAt)}</div>
+            </div>
+          </div>
+          <div class="answer-text">${a.answerText||''}</div>
+          ${a.imageURL ? `<img src="${a.imageURL}" class="answer-img" alt="Answer">` : ''}
+          <div class="action-row">
+            <button class="action-btn" onclick="voteAnswer('${d.id}')">👍 ${a.votes||0}</button>
+            ${user && user.uid === questionOwnerId && !isBest ? `<button class="action-btn" style="color:var(--accent)" onclick="markBestAnswer('${questionId}','${d.id}')">⭐ সেরা</button>` : ''}
+            ${user && (user.uid === a.userId) ? `<button class="action-btn" style="color:var(--danger)" onclick="deleteAnswer('${d.id}','${questionId}')">🗑️</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>';
+  }
+}
+
+async function voteQuestion(qId) {
+  if (!auth.currentUser) return showToast('ভোট দিতে লগইন করুন', 'warning');
+  await toggleVote('questions', qId, auth.currentUser.uid);
+  showToast('ভোট দেওয়া হয়েছে', 'success');
+}
+
+async function voteAnswer(aId) {
+  if (!auth.currentUser) return showToast('ভোট দিতে লগইন করুন', 'warning');
+  await toggleVote('answers', aId, auth.currentUser.uid);
+  loadAnswers(currentQId);
+}
+
+async function markBestAnswer(qId, aId) {
+  try {
+    await db.collection('answers').doc(aId).update({ isBest: true });
+    await db.collection('questions').doc(qId).update({ hasBestAnswer: true });
+    showToast('সেরা উত্তর চিহ্নিত করা হয়েছে! ⭐', 'success');
+    loadAnswers(qId, auth.currentUser.uid);
+  } catch(e) { showToast('সমস্যা হয়েছে', 'error'); }
+}
+
+async function deleteQuestion(qId) {
+  confirmAction('এই প্রশ্ন মুছে ফেলবেন?', async () => {
+    await db.collection('questions').doc(qId).delete();
+    allQuestions = allQuestions.filter(q => q.id !== qId);
+    closeDetailModal();
+    renderQuestions();
+    showToast('প্রশ্ন মুছে ফেলা হয়েছে', 'success');
+  });
+}
+
+async function deleteAnswer(aId, qId) {
+  confirmAction('এই উত্তর মুছে ফেলবেন?', async () => {
+    await db.collection('answers').doc(aId).delete();
+    await db.collection('questions').doc(qId).update({
+      answerCount: firebase.firestore.FieldValue.increment(-1)
+    });
+    loadAnswers(qId, null);
+    showToast('উত্তর মুছে ফেলা হয়েছে', 'success');
+  });
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+  currentQId = null;
+}
+
+function openAskModal() {
+  if (!auth.currentUser) {
+    showToast('প্রশ্ন করতে লগইন করুন', 'warning');
+    setTimeout(() => window.location.href = 'auth.html', 1200);
+    return;
+  }
+  document.getElementById('ask-modal').classList.add('open');
+}
+function closeAskModal() { document.getElementById('ask-modal').classList.remove('open'); }
+
+async function submitQuestion() {
+  if (!auth.currentUser) return;
+  const title   = document.getElementById('q-title').value.trim();
+  const subject = document.getElementById('q-subject').value;
+  const desc    = document.getElementById('q-desc').value.trim();
+  const imgFile = qImgUploader.getFile();
+  const btn     = document.getElementById('btn-ask');
+
+  if (!title) return showToast('প্রশ্নের শিরোনাম দিন', 'error');
+  if (!subject) return showToast('বিষয় নির্বাচন করুন', 'error');
+  setButtonLoading(btn, true, 'প্রকাশ হচ্ছে...');
+
+  try {
+    let imageURL = '';
+    if (imgFile) {
+      document.getElementById('q-img-prog').style.display = '';
+      imageURL = await uploadImage(imgFile, 'questions', pct => {
+        document.getElementById('q-img-fill').style.width = pct + '%';
+      });
+      document.getElementById('q-img-prog').style.display = 'none';
+    }
+    const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
+    const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
+
+    await db.collection('questions').add({
+      title, subject, description: desc, imageURL,
+      userId: auth.currentUser.uid, userName,
+      votes: 0, voters: [], answerCount: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await addPoints(auth.currentUser.uid, 5, 'question_asked');
+    showToast('প্রশ্ন প্রকাশ হয়েছে! +5 পয়েন্ট 🎉', 'success');
+    closeAskModal();
+    document.getElementById('q-title').value = '';
+    document.getElementById('q-subject').value = '';
+    document.getElementById('q-desc').value = '';
+    qImgUploader.clear();
+    loadQuestions();
+  } catch(e) { showToast('প্রকাশ করা সম্ভব হয়নি: ' + e.message, 'error'); }
+  setButtonLoading(btn, false, '🚀 প্রশ্ন প্রকাশ করুন');
+}
+
+async function submitAnswer() {
+  if (!auth.currentUser) return showToast('উত্তর দিতে লগইন করুন', 'warning');
+  if (!currentQId) return;
+  const text    = document.getElementById('answer-text').value.trim();
+  const imgFile = ansImgUploader.getFile();
+  const btn     = document.getElementById('btn-answer');
+
+  if (!text && !imgFile) return showToast('উত্তর বা ছবি দিন', 'error');
+  setButtonLoading(btn, true, 'পাঠানো হচ্ছে...');
+
+  try {
+    let imageURL = '';
+    if (imgFile) {
+      document.getElementById('ans-img-prog').style.display = '';
+      imageURL = await uploadImage(imgFile, 'answers', pct => {
+        document.getElementById('ans-img-fill').style.width = pct + '%';
+      });
+      document.getElementById('ans-img-prog').style.display = 'none';
+    }
+    const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
+    const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
+
+    await db.collection('answers').add({
+      questionId: currentQId, answerText: text, imageURL,
+      userId: auth.currentUser.uid, userName,
+      votes: 0, voters: [], isBest: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection('questions').doc(currentQId).update({
+      answerCount: firebase.firestore.FieldValue.increment(1)
+    });
+    await addPoints(auth.currentUser.uid, 15, 'answer_posted');
+    showToast('উত্তর পোস্ট হয়েছে! +15 পয়েন্ট 🎉', 'success');
+    document.getElementById('answer-text').value = '';
+    ansImgUploader.clear();
+    const q = allQuestions.find(q => q.id === currentQId);
+    if (q) { q.answerCount = (q.answerCount||0) + 1; renderQuestions(); }
+    loadAnswers(currentQId, q?.userId);
+  } catch(e) { showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); }
+  setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'এইমাত্র';
+  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
+  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
+  return `${Math.floor(s/86400)} দিন আগে`;
+}
+</script>
+</body>
+</html>

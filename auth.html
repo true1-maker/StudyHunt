@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — লগইন / রেজিস্ট্রেশন</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    body { padding-bottom: 0; }
+    .auth-page { padding-top: 40px; }
+    .social-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-body);
+      color: var(--text);
+      transition: all var(--transition);
+    }
+    .social-btn:hover { background: var(--bg); border-color: var(--primary); }
+    .form-password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+    .form-error { font-size: 0.78rem; color: var(--danger); margin-top: 4px; }
+    .terms-text { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 12px; line-height: 1.6; }
+    .terms-text a { color: var(--primary); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">📚</div>
+      <div class="auth-brand">StudyNest</div>
+      <div class="auth-tagline">বাংলাদেশের শিক্ষার্থীদের নিজস্ব প্ল্যাটফর্ম</div>
+    </div>
+
+    <!-- Tab Switch -->
+    <div class="auth-tab">
+      <button class="auth-tab-btn active" id="tab-login" onclick="switchTab('login')">লগইন</button>
+      <button class="auth-tab-btn" id="tab-register" onclick="switchTab('register')">রেজিস্ট্রেশন</button>
+    </div>
+
+    <!-- ===== LOGIN FORM ===== -->
+    <div id="form-login">
+      <div class="form-group">
+        <label class="form-label">ইমেইল</label>
+        <input type="email" id="login-email" class="form-control" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">পাসওয়ার্ড</label>
+        <div class="form-password-wrap">
+          <input type="password" id="login-pass" class="form-control" placeholder="••••••••" style="padding-right:44px">
+          <button class="password-toggle" onclick="togglePassword('login-pass')">👁️</button>
+        </div>
+      </div>
+      <div style="text-align:right; margin:-8px 0 16px">
+        <a href="#" onclick="forgotPassword()" style="font-size:.8rem;color:var(--primary);font-weight:500">পাসওয়ার্ড ভুলে গেছেন?</a>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" id="btn-login" onclick="doLogin()">লগইন করুন</button>
+
+      <div class="divider">অথবা</div>
+      <button class="social-btn" onclick="googleSignIn()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+        Google দিয়ে লগইন
+      </button>
+    </div>
+
+    <!-- ===== REGISTER FORM ===== -->
+    <div id="form-register" style="display:none">
+      <div class="form-group">
+        <label class="form-label">পুরো নাম</label>
+        <input type="text" id="reg-name" class="form-control" placeholder="আপনার নাম লিখুন">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ইমেইল</label>
+        <input type="email" id="reg-email" class="form-control" placeholder="your@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">শিক্ষাপ্রতিষ্ঠান</label>
+        <input type="text" id="reg-institution" class="form-control" placeholder="স্কুল / কলেজ / বিশ্ববিদ্যালয়">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ক্লাস</label>
+        <select id="reg-class" class="form-control">
+          <option value="">ক্লাস নির্বাচন করুন</option>
+          <option>ষষ্ঠ শ্রেণী</option><option>সপ্তম শ্রেণী</option>
+          <option>অষ্টম শ্রেণী</option><option>নবম শ্রেণী</option>
+          <option>দশম শ্রেণী</option><option>একাদশ শ্রেণী</option>
+          <option>দ্বাদশ শ্রেণী</option><option>অনার্স</option>
+          <option>মাস্টার্স</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">পাসওয়ার্ড</label>
+        <div class="form-password-wrap">
+          <input type="password" id="reg-pass" class="form-control" placeholder="কমপক্ষে ৬ অক্ষর" style="padding-right:44px">
+          <button class="password-toggle" onclick="togglePassword('reg-pass')">👁️</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" id="btn-register" onclick="doRegister()">অ্যাকাউন্ট তৈরি করুন</button>
+
+      <div class="divider">অথবা</div>
+      <button class="social-btn" onclick="googleSignIn()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google">
+        Google দিয়ে রেজিস্ট্রেশন
+      </button>
+      <p class="terms-text">রেজিস্ট্রেশন করলে আপনি আমাদের <a href="#">Terms of Service</a> ও <a href="#">Privacy Policy</a> মেনে নিচ্ছেন।</p>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+
+<script>
+// Redirect if already logged in
+auth.onAuthStateChanged(user => {
+  if (user) window.location.href = 'index.html';
+});
+
+function switchTab(tab) {
+  document.getElementById('form-login').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('form-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',    tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+function togglePassword(id) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const btn   = document.getElementById('btn-login');
+  if (!email || !pass) return showToast('সব তথ্য পূরণ করুন', 'error');
+  setButtonLoading(btn, true, 'লগইন হচ্ছে...');
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    showToast('সফলভাবে লগইন হয়েছে! ✅', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  } catch(e) {
+    showToast(firebaseErrorMsg(e.code), 'error');
+    setButtonLoading(btn, false, 'লগইন করুন');
+  }
+}
+
+async function doRegister() {
+  const name        = document.getElementById('reg-name').value.trim();
+  const email       = document.getElementById('reg-email').value.trim();
+  const institution = document.getElementById('reg-institution').value.trim();
+  const cls         = document.getElementById('reg-class').value;
+  const pass        = document.getElementById('reg-pass').value;
+  const btn         = document.getElementById('btn-register');
+  if (!name || !email || !pass) return showToast('নাম, ইমেইল ও পাসওয়ার্ড দিন', 'error');
+  if (pass.length < 6) return showToast('পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে', 'error');
+  setButtonLoading(btn, true, 'তৈরি হচ্ছে...');
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+    await db.collection('users').doc(cred.user.uid).set({
+      name, email, institution: institution || '', class: cls || '',
+      profileImage: '', points: 0, isAdmin: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('অ্যাকাউন্ট তৈরি হয়েছে! 🎉', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  } catch(e) {
+    showToast(firebaseErrorMsg(e.code), 'error');
+    setButtonLoading(btn, false, 'অ্যাকাউন্ট তৈরি করুন');
+  }
+}
+
+async function googleSignIn() {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (!snap.exists) {
+      await db.collection('users').doc(user.uid).set({
+        name: user.displayName || '', email: user.email || '',
+        institution: '', class: '', profileImage: user.photoURL || '',
+        points: 0, isAdmin: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    showToast('সফলভাবে লগইন হয়েছে! ✅', 'success');
+    setTimeout(() => window.location.href = 'index.html', 600);
+  } catch(e) {
+    showToast(firebaseErrorMsg(e.code), 'error');
+  }
+}
+
+async function forgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) return showToast('আগে ইমেইল লিখুন', 'warning');
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showToast('পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে', 'success');
+  } catch(e) {
+    showToast(firebaseErrorMsg(e.code), 'error');
+  }
+}
+
+function firebaseErrorMsg(code) {
+  const msgs = {
+    'auth/user-not-found': 'ইমেইল পাওয়া যায়নি',
+    'auth/wrong-password': 'পাসওয়ার্ড ভুল',
+    'auth/email-already-in-use': 'এই ইমেইল ইতিমধ্যে ব্যবহৃত',
+    'auth/invalid-email': 'সঠিক ইমেইল দিন',
+    'auth/weak-password': 'পাসওয়ার্ড আরও শক্তিশালী করুন',
+    'auth/too-many-requests': 'অনেক চেষ্টা করা হয়েছে, কিছুক্ষণ পর চেষ্টা করুন',
+    'auth/network-request-failed': 'ইন্টারনেট সংযোগ পরীক্ষা করুন',
+    'auth/popup-closed-by-user': 'লগইন বাতিল করা হয়েছে',
+  };
+  return msgs[code] || 'একটি সমস্যা হয়েছে, আবার চেষ্টা করুন';
+}
+
+// Utilities needed on this page
+function showToast(message, type = 'success') {
+  let container = document.getElementById('toast-container');
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.style.cssText = 'position:fixed;top:20px;right:16px;z-index:999;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.13);font-size:.875rem;font-weight:500;background:var(--primary);color:white;animation:toastIn .3s ease';
+  if (type === 'error') toast.style.background = 'var(--danger)';
+  if (type === 'warning') { toast.style.background = 'var(--accent)'; toast.style.color = '#5a3c00'; }
+  toast.innerHTML = `${icons[type] || ''} ${message}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+function setButtonLoading(btn, loading, text = '') {
+  if (!btn) return;
+  if (loading) { btn.disabled = true; btn._orig = btn.innerHTML; btn.innerHTML = `⏳ ${text}`; }
+  else { btn.disabled = false; btn.innerHTML = btn._orig || text; }
+}
+</script>
+</body>
+</html>

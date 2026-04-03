@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — হোম</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .hero-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, #27a05a 100%);
+      padding: 22px 20px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .hero-banner::before {
+      content: '📚';
+      position: absolute;
+      right: 16px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 5rem;
+      opacity: 0.2;
+    }
+    .hero-banner h2 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; }
+    .hero-banner p  { font-size: 0.875rem; opacity: 0.9; margin-top: 4px; }
+    .hero-quick {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .quick-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition);
+    }
+    .quick-btn:hover { border-color: var(--primary); background: var(--primary-pale); transform: translateY(-2px); }
+    .quick-btn .icon { font-size: 1.6rem; }
+    .quick-btn .label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-align: center; }
+    .question-card { margin-bottom: 12px; }
+    .question-card .q-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
+    .question-card .q-img { width: 100%; max-height: 140px; object-fit: cover; border-radius: var(--radius-sm); margin: 8px 0; }
+    .question-card .answer-count { font-size: 0.8rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-brand">
+    <div class="nav-logo">📚</div>
+    <div class="nav-title">StudyNest</div>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-notification" onclick="window.location.href='index.html'">
+      🔔<span class="notif-dot" id="notif-dot" style="display:none"></span>
+    </div>
+    <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<!-- HERO BANNER -->
+<div class="hero-banner">
+  <h2 id="hero-greeting">শুভ সকাল! 🌞</h2>
+  <p>আজকে কী শিখবে?</p>
+</div>
+
+<div class="container">
+
+  <!-- QUICK ACCESS -->
+  <div class="hero-quick">
+    <a class="quick-btn" href="notes.html"><span class="icon">📝</span><span class="label">নোটস</span></a>
+    <a class="quick-btn" href="questions.html"><span class="icon">❓</span><span class="label">প্রশ্নোত্তর</span></a>
+    <a class="quick-btn" href="quiz.html"><span class="icon">📊</span><span class="label">কুইজ</span></a>
+    <a class="quick-btn" href="profile.html"><span class="icon">👤</span><span class="label">প্রোফাইল</span></a>
+  </div>
+
+  <!-- NOTICE BOARD -->
+  <div class="section-header">
+    <div class="section-title">📌 নোটিশ বোর্ড</div>
+    <a href="admin.html" class="section-link" id="admin-link" style="display:none">সব →</a>
+  </div>
+  <div id="notices-list">
+    <div class="skeleton skeleton-line" style="height:70px;border-radius:12px;margin-bottom:10px"></div>
+    <div class="skeleton skeleton-line" style="height:70px;border-radius:12px"></div>
+  </div>
+
+  <!-- TRENDING QUESTIONS -->
+  <div class="section-header">
+    <div class="section-title">🔥 ট্রেন্ডিং প্রশ্ন</div>
+    <a href="questions.html" class="section-link">সব →</a>
+  </div>
+  <div id="trending-list">
+    <div class="skeleton skeleton-line" style="height:90px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton skeleton-line" style="height:90px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton skeleton-line" style="height:90px;border-radius:12px"></div>
+  </div>
+
+  <!-- LATEST NOTES -->
+  <div class="section-header">
+    <div class="section-title">📒 সাম্প্রতিক নোটস</div>
+    <a href="notes.html" class="section-link">সব →</a>
+  </div>
+  <div id="notes-list" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="skeleton" style="height:140px;border-radius:12px"></div>
+    <div class="skeleton" style="height:140px;border-radius:12px"></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="section-header">
+    <div class="section-title">🏆 লিডারবোর্ড</div>
+    <a href="profile.html" class="section-link">সব →</a>
+  </div>
+  <div class="card" id="leaderboard-list">
+    <div class="skeleton skeleton-line w-3-4"></div>
+    <div class="skeleton skeleton-line w-3-4" style="margin-top:12px"></div>
+    <div class="skeleton skeleton-line w-3-4" style="margin-top:12px"></div>
+  </div>
+
+  <div style="height:16px"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a class="bottom-nav-item active" href="index.html"><span class="nav-icon">🏠</span><span class="nav-label">হোম</span></a>
+  <a class="bottom-nav-item" href="notes.html"><span class="nav-icon">📝</span><span class="nav-label">নোটস</span></a>
+  <a class="bottom-nav-item" href="questions.html"><span class="nav-icon">❓</span><span class="nav-label">প্রশ্ন</span></a>
+  <a class="bottom-nav-item" href="quiz.html"><span class="nav-icon">📊</span><span class="nav-label">কুইজ</span></a>
+  <a class="bottom-nav-item" href="profile.html"><span class="nav-icon">👤</span><span class="nav-label">প্রোফাইল</span></a>
+</nav>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  // Greeting
+  const h = new Date().getHours();
+  const greetings = { morning: 'শুভ সকাল! 🌞', afternoon: 'শুভ দুপুর! ☀️', evening: 'শুভ বিকাল! 🌅', night: 'শুভ রাত্রি! 🌙' };
+  document.getElementById('hero-greeting').textContent =
+    h < 12 ? greetings.morning : h < 17 ? greetings.afternoon : h < 20 ? greetings.evening : greetings.night;
+
+  // Load Notices
+  loadNotices();
+  loadTrendingQuestions();
+  loadLatestNotes();
+  loadLeaderboard();
+
+  // Check admin
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      const snap = await db.collection('users').doc(user.uid).get();
+      if (snap.exists && snap.data().isAdmin) {
+        document.getElementById('admin-link').style.display = '';
+      }
+    }
+  });
+});
+
+async function loadNotices() {
+  const list = document.getElementById('notices-list');
+  try {
+    const snap = await db.collection('notices').orderBy('createdAt', 'desc').limit(3).get();
+    if (snap.empty) {
+      list.innerHTML = '<div class="notice-card"><div class="notice-title">📌 স্বাগতম StudyNest-এ!</div><div class="notice-body">এখানে শিক্ষকরা গুরুত্বপূর্ণ নোটিশ দেবেন।</div><div class="notice-date">আজ</div></div>';
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const n = d.data();
+      return `<div class="notice-card">
+        <div class="notice-title">${n.title || ''}</div>
+        <div class="notice-body">${n.body || ''}</div>
+        <div class="notice-date">${timeAgo(n.createdAt)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="notice-card"><div class="notice-title">📌 স্বাগতম!</div><div class="notice-body">StudyNest-এ আপনাকে স্বাগত।</div></div>';
+  }
+}
+
+async function loadTrendingQuestions() {
+  const list = document.getElementById('trending-list');
+  try {
+    const snap = await db.collection('questions').orderBy('votes', 'desc').limit(5).get();
+    if (snap.empty) {
+      list.innerHTML = renderEmptyState('❓', 'এখনো প্রশ্ন নেই', 'প্রথম প্রশ্ন করুন!', 'questions.html', 'প্রশ্ন করুন');
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const q = d.data();
+      return `<div class="card question-card" onclick="window.location.href='questions.html?id=${d.id}'">
+        <div class="user-row mb-8">
+          <div class="avatar avatar-sm avatar-placeholder">${(q.userName||'?').charAt(0)}</div>
+          <div class="user-row-info">
+            <div class="user-name">${q.userName || 'Anonymous'}</div>
+            <div class="user-time">${timeAgo(q.createdAt)}</div>
+          </div>
+          <span class="badge badge-primary">${q.subject || ''}</span>
+        </div>
+        <div class="q-title">${q.title || ''}</div>
+        ${q.imageURL ? `<img src="${q.imageURL}" class="q-img" alt="Question image">` : ''}
+        <div class="card-meta">
+          <span>👍 ${q.votes || 0} ভোট</span>
+          <span>💬 ${q.answerCount || 0} উত্তর</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<p class="text-muted text-center">লোড করা সম্ভব হয়নি</p>';
+  }
+}
+
+async function loadLatestNotes() {
+  const list = document.getElementById('notes-list');
+  try {
+    const snap = await db.collection('notes').orderBy('createdAt', 'desc').limit(4).get();
+    if (snap.empty) {
+      list.style.display = 'block';
+      list.innerHTML = renderEmptyState('📝', 'এখনো নোট নেই', 'প্রথম নোট আপলোড করুন!', 'notes.html', 'নোট আপলোড');
+      return;
+    }
+    list.innerHTML = snap.docs.map(d => {
+      const n = d.data();
+      return `<a href="notes.html?id=${d.id}" class="card" style="display:block;overflow:hidden;padding:0">
+        ${n.imageURL ? `<img src="${n.imageURL}" alt="${n.title}" style="width:100%;height:90px;object-fit:cover">` : `<div style="height:90px;background:var(--primary-pale);display:flex;align-items:center;justify-content:center;font-size:2rem">📄</div>`}
+        <div style="padding:10px">
+          <div style="font-size:.82rem;font-weight:600;line-height:1.3">${n.title || 'নোট'}</div>
+          <div class="badge badge-primary" style="margin-top:5px;font-size:.68rem">${n.subject || ''}</div>
+        </div>
+      </a>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<p class="text-muted">লোড করা সম্ভব হয়নি</p>';
+  }
+}
+
+async function loadLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+  try {
+    const snap = await db.collection('users').orderBy('points', 'desc').limit(5).get();
+    if (snap.empty) {
+      list.innerHTML = '<p class="text-muted text-center">এখনো কোনো ডেটা নেই</p>';
+      return;
+    }
+    const rankIcons = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    list.innerHTML = snap.docs.map((d, i) => {
+      const u = d.data();
+      return `<div class="leaderboard-item">
+        <div class="rank ${i < 3 ? 'rank-'+(i+1) : 'rank-n'}">${i+1}</div>
+        <div class="avatar avatar-sm avatar-placeholder">${(u.name||'?').charAt(0)}</div>
+        <div class="user-row-info">
+          <div class="user-name">${u.name || 'Student'}</div>
+          <div style="font-size:.72rem;color:var(--text-muted)">${u.institution || ''}</div>
+        </div>
+        <div class="leaderboard-points">${u.points || 0} <span>pts</span></div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<p class="text-muted text-center">লোড করা সম্ভব হয়নি</p>';
+  }
+}
+
+function renderEmptyState(icon, title, desc, href, btnText) {
+  return `<div class="empty-state">
+    <div class="empty-icon">${icon}</div>
+    <div class="empty-title">${title}</div>
+    <div class="empty-desc">${desc}</div>
+    <a href="${href}" class="btn btn-primary btn-sm">${btnText}</a>
+  </div>`;
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const now = Date.now();
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((now - d.getTime()) / 1000);
+  if (s < 60) return 'এইমাত্র';
+  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
+  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
+  return `${Math.floor(s/86400)} দিন আগে`;
+}
+</script>
+</body>
+</html>
