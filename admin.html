@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — Admin Panel</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .admin-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .admin-stat {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+    }
+    .admin-stat-value {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .admin-stat-label {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .content-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .content-item:last-child { border-bottom: none; }
+    .content-item-info { flex: 1; min-width: 0; }
+    .content-item-title {
+      font-size: .875rem;
+      font-weight: 600;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .content-item-meta { font-size: .75rem; color: var(--text-muted); }
+    .delete-btn {
+      flex-shrink: 0;
+      background: var(--danger-light);
+      color: var(--danger);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-body);
+    }
+    .delete-btn:hover { background: var(--danger); color: white; }
+    .user-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .user-item:last-child { border-bottom: none; }
+    .admin-toggle {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+    .toggle-switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: .3s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: .3s;
+    }
+    input:checked + .toggle-slider { background: var(--primary); }
+    input:checked + .toggle-slider::before { transform: translateX(16px); }
+    .notice-form {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer">
+    <div class="nav-logo">📚</div>
+    <div class="nav-title">Admin Panel</div>
+  </div>
+  <div class="nav-actions">
+    <a href="index.html" class="btn btn-ghost btn-sm">← হোম</a>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<!-- Not admin -->
+<div id="not-admin" style="display:none" class="container">
+  <div class="empty-state" style="padding-top:80px">
+    <div class="empty-icon">🔒</div>
+    <div class="empty-title">অ্যাক্সেস নেই</div>
+    <div class="empty-desc">এই পেজ শুধু Admin এর জন্য</div>
+    <a href="index.html" class="btn btn-primary btn-sm">হোমে ফিরুন</a>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="container" style="text-align:center;padding-top:80px">
+  <div class="spinner spinner-lg" style="margin:0 auto"></div>
+</div>
+
+<!-- Admin Content -->
+<div id="admin-content" style="display:none">
+  <div class="container" style="padding-top:16px">
+
+    <!-- Stats -->
+    <div class="section-title" style="margin-bottom:12px">📊 সামগ্রিক পরিসংখ্যান</div>
+    <div class="admin-stat-grid">
+      <div class="admin-stat"><div class="admin-stat-value" id="total-users">—</div><div class="admin-stat-label">মোট ব্যবহারকারী</div></div>
+      <div class="admin-stat"><div class="admin-stat-value" id="total-notes">—</div><div class="admin-stat-label">মোট নোটস</div></div>
+      <div class="admin-stat"><div class="admin-stat-value" id="total-questions">—</div><div class="admin-stat-label">মোট প্রশ্ন</div></div>
+      <div class="admin-stat"><div class="admin-stat-value" id="total-answers">—</div><div class="admin-stat-label">মোট উত্তর</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs" id="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('notices', this)">📌 নোটিশ</button>
+      <button class="admin-tab" onclick="switchTab('users', this)">👥 ব্যবহারকারী</button>
+      <button class="admin-tab" onclick="switchTab('notes', this)">📝 নোটস</button>
+      <button class="admin-tab" onclick="switchTab('questions', this)">❓ প্রশ্ন</button>
+      <button class="admin-tab" onclick="switchTab('quizzes', this)">📊 কুইজ</button>
+    </div>
+
+    <!-- ===== NOTICES TAB ===== -->
+    <div id="tab-notices" class="tab-content">
+      <div class="notice-form">
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:12px">➕ নতুন নোটিশ</div>
+        <div class="form-group">
+          <input type="text" id="notice-title" class="form-control" placeholder="নোটিশের শিরোনাম">
+        </div>
+        <div class="form-group">
+          <textarea id="notice-body" class="form-control" placeholder="নোটিশের বিস্তারিত..." rows="3"></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-add-notice" onclick="addNotice()">📌 নোটিশ প্রকাশ করুন</button>
+      </div>
+      <div class="card">
+        <div class="section-title" style="margin-bottom:12px">প্রকাশিত নোটিশ</div>
+        <div id="notices-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== USERS TAB ===== -->
+    <div id="tab-users" class="tab-content" style="display:none">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="user-search" placeholder="ব্যবহারকারী খুঁজুন..." oninput="filterUsers()">
+      </div>
+      <div class="card">
+        <div id="users-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== NOTES TAB ===== -->
+    <div id="tab-notes" class="tab-content" style="display:none">
+      <div class="card">
+        <div id="admin-notes-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== QUESTIONS TAB ===== -->
+    <div id="tab-questions" class="tab-content" style="display:none">
+      <div class="card">
+        <div id="admin-questions-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== QUIZZES TAB ===== -->
+    <div id="tab-quizzes" class="tab-content" style="display:none">
+      <div class="card">
+        <div id="admin-quizzes-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+      <a href="quiz.html" class="btn btn-primary btn-full mt-12">➕ নতুন কুইজ তৈরি করুন</a>
+    </div>
+
+    <div style="height:24px"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allUsers = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  auth.onAuthStateChanged(async user => {
+    document.getElementById('loading').style.display = 'none';
+    if (!user) { window.location.href = 'auth.html'; return; }
+
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (!snap.exists || !snap.data().isAdmin) {
+      document.getElementById('not-admin').style.display = '';
+      return;
+    }
+
+    document.getElementById('admin-content').style.display = '';
+    loadStats();
+    loadNotices();
+  });
+});
+
+// ===== STATS =====
+async function loadStats() {
+  try {
+    const [u, n, q, a] = await Promise.all([
+      db.collection('users').get(),
+      db.collection('notes').get(),
+      db.collection('questions').get(),
+      db.collection('answers').get()
+    ]);
+    document.getElementById('total-users').textContent     = u.size;
+    document.getElementById('total-notes').textContent     = n.size;
+    document.getElementById('total-questions').textContent = q.size;
+    document.getElementById('total-answers').textContent   = a.size;
+  } catch(e) { console.warn(e); }
+}
+
+// ===== TAB SWITCH =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).style.display = '';
+  btn.classList.add('active');
+  if (tab === 'users')     loadUsers();
+  if (tab === 'notes')     loadAdminNotes();
+  if (tab === 'questions') loadAdminQuestions();
+  if (tab === 'quizzes')   loadAdminQuizzes();
+}
+
+// ===== NOTICES =====
+async function loadNotices() {
+  const list = document.getElementById('notices-list');
+  try {
+    const snap = await db.collection('notices').orderBy('createdAt', 'desc').get();
+    if (snap.empty) { list.innerHTML = '<p class="text-muted text-center">কোনো নোটিশ নেই</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const n = d.data();
+      return `<div class="content-item">
+        <div class="content-item-info">
+          <div class="content-item-title">${n.title||''}</div>
+          <div class="content-item-meta">${n.body||''}</div>
+          <div class="content-item-meta">${timeAgo(n.createdAt)}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteDoc('notices','${d.id}', loadNotices)">🗑️ মুছুন</button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
+async function addNotice() {
+  const title = document.getElementById('notice-title').value.trim();
+  const body  = document.getElementById('notice-body').value.trim();
+  if (!title || !body) return showToast('শিরোনাম ও বিস্তারিত দিন', 'error');
+  const btn = document.getElementById('btn-add-notice');
+  setButtonLoading(btn, true, 'প্রকাশ হচ্ছে...');
+  try {
+    await db.collection('notices').add({
+      title, body,
+      createdBy: auth.currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('নোটিশ প্রকাশ হয়েছে ✅', 'success');
+    document.getElementById('notice-title').value = '';
+    document.getElementById('notice-body').value  = '';
+    loadNotices();
+  } catch(e) { showToast('সমস্যা হয়েছে', 'error'); }
+  setButtonLoading(btn, false, '📌 নোটিশ প্রকাশ করুন');
+}
+
+// ===== USERS =====
+async function loadUsers() {
+  const list = document.getElementById('users-list');
+  list.innerHTML = '<div class="spinner" style="margin:16px auto"></div>';
+  try {
+    const snap = await db.collection('users').orderBy('points', 'desc').get();
+    allUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderUsers();
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
+function filterUsers() {
+  renderUsers();
+}
+
+function renderUsers() {
+  const q    = document.getElementById('user-search').value.toLowerCase();
+  const list = document.getElementById('users-list');
+  let filtered = allUsers;
+  if (q) filtered = filtered.filter(u =>
+    (u.name||'').toLowerCase().includes(q) ||
+    (u.email||'').toLowerCase().includes(q) ||
+    (u.institution||'').toLowerCase().includes(q)
+  );
+  if (filtered.length === 0) { list.innerHTML = '<p class="text-muted text-center">কোনো ব্যবহারকারী নেই</p>'; return; }
+  list.innerHTML = filtered.map(u => `
+    <div class="user-item">
+      <div class="avatar avatar-sm avatar-placeholder">${(u.name||'?').charAt(0)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.875rem;font-weight:600">${u.name||'—'}</div>
+        <div style="font-size:.75rem;color:var(--text-muted)">${u.email||''} · ${u.points||0} pts</div>
+        <div style="font-size:.72rem;color:var(--text-muted)">${u.institution||''} ${u.class||''}</div>
+      </div>
+      <div class="admin-toggle">
+        <span style="font-size:.72rem">Admin</span>
+        <label class="toggle-switch">
+          <input type="checkbox" ${u.isAdmin ? 'checked' : ''} onchange="toggleAdmin('${u.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleAdmin(userId, isAdmin) {
+  try {
+    await db.collection('users').doc(userId).update({ isAdmin });
+    showToast(isAdmin ? 'Admin করা হয়েছে ✅' : 'Admin সরানো হয়েছে', 'success');
+    const u = allUsers.find(u => u.id === userId);
+    if (u) u.isAdmin = isAdmin;
+  } catch(e) { showToast('সমস্যা হয়েছে', 'error'); }
+}
+
+// ===== NOTES =====
+async function loadAdminNotes() {
+  const list = document.getElementById('admin-notes-list');
+  list.innerHTML = '<div class="spinner" style="margin:16px auto"></div>';
+  try {
+    const snap = await db.collection('notes').orderBy('createdAt', 'desc').limit(30).get();
+    if (snap.empty) { list.innerHTML = '<p class="text-muted text-center">কোনো নোটস নেই</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const n = d.data();
+      return `<div class="content-item">
+        <div class="content-item-info">
+          <div class="content-item-title">${n.title||'নোট'}</div>
+          <div class="content-item-meta">📚 ${n.subject||''} · 👤 ${n.uploaderName||''}</div>
+          <div class="content-item-meta">👍 ${n.votes||0} · ${timeAgo(n.createdAt)}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteDoc('notes','${d.id}', loadAdminNotes)">🗑️ মুছুন</button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
+// ===== QUESTIONS =====
+async function loadAdminQuestions() {
+  const list = document.getElementById('admin-questions-list');
+  list.innerHTML = '<div class="spinner" style="margin:16px auto"></div>';
+  try {
+    const snap = await db.collection('questions').orderBy('createdAt', 'desc').limit(30).get();
+    if (snap.empty) { list.innerHTML = '<p class="text-muted text-center">কোনো প্রশ্ন নেই</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const q = d.data();
+      return `<div class="content-item">
+        <div class="content-item-info">
+          <div class="content-item-title">${q.title||'প্রশ্ন'}</div>
+          <div class="content-item-meta">📚 ${q.subject||''} · 👤 ${q.userName||''}</div>
+          <div class="content-item-meta">👍 ${q.votes||0} · 💬 ${q.answerCount||0} · ${timeAgo(q.createdAt)}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteDoc('questions','${d.id}', loadAdminQuestions)">🗑️ মুছুন</button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
+// ===== QUIZZES =====
+async function loadAdminQuizzes() {
+  const list = document.getElementById('admin-quizzes-list');
+  list.innerHTML = '<div class="spinner" style="margin:16px auto"></div>';
+  try {
+    const snap = await db.collection('quizzes').orderBy('createdAt', 'desc').get();
+    if (snap.empty) { list.innerHTML = '<p class="text-muted text-center">কোনো কুইজ নেই</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const q = d.data();
+      return `<div class="content-item">
+        <div class="content-item-info">
+          <div class="content-item-title">${q.name||'কুইজ'}</div>
+          <div class="content-item-meta">📚 ${q.subject||''} · ❓ ${(q.questions||[]).length} প্রশ্ন</div>
+          <div class="content-item-meta">${timeAgo(q.createdAt)}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteDoc('quizzes','${d.id}', loadAdminQuizzes)">🗑️ মুছুন</button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
+// ===== DELETE =====
+async function deleteDoc(collection, id, reloadFn) {
+  confirmAction('এটি মুছে ফেলবেন?', async () => {
+    try {
+      await db.collection(collection).doc(id).delete();
+      showToast('মুছে ফেলা হয়েছে ✅', 'success');
+      reloadFn();
+      loadStats();
+    } catch(e) { showToast('মুছতে সমস্যা হয়েছে', 'error'); }
+  });
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'এইমাত্র';
+  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
+  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
+  return `${Math.floor(s/86400)} দিন আগে`;
+}
+</script>
+</body>
+                                                                                      </html>
+
