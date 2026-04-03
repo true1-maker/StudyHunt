@@ -487,7 +487,9 @@ async function submitAnswer() {
       renderQuestions(); 
     }
     
-        loadAnswers(currentQId, allQuestions[qIndex]?.userId);
+        const qData = allQuestions.find(q => q.id === currentQId);
+loadAnswers(currentQId, qData?.userId);
+    
   } catch(e) { 
     showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); 
     if (progBar) progBar.style.display = 'none';
