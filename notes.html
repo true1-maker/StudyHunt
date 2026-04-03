@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — নোটস</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .note-card { cursor: pointer; overflow: hidden; padding: 0; }
+    .note-thumb { height: 100px; background: var(--primary-pale); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; }
+    .note-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .note-body { padding: 10px; }
+    .note-title { font-size: .85rem; font-weight: 600; line-height: 1.3; margin-bottom: 5px; }
+    .note-file-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: .65rem;
+      font-weight: 600;
+    }
+    .note-pdf  { background: #ffe5e5; color: #c00; }
+    .note-img  { background: #e5f5e5; color: #060; }
+    .note-detail-modal .detail-img {
+      width: 100%;
+      border-radius: var(--radius);
+      max-height: 280px;
+      object-fit: contain;
+      background: var(--bg);
+    }
+    .upload-progress {
+      height: 6px; background: var(--border); border-radius: 3px;
+      overflow: hidden; margin-top: 8px; display: none;
+    }
+    .upload-progress-fill { height: 100%; background: var(--primary); transition: width .3s; }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-brand">
+    <div class="nav-logo">📚</div>
+    <div class="nav-title">নোটস</div>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">📒 সব নোটস</div>
+    <div class="page-subtitle">শিক্ষার্থীদের আপলোড করা নোটস ও সামগ্রী</div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="search-input" placeholder="নোটস খুঁজুন..." oninput="filterNotes()">
+  </div>
+
+  <!-- Subject Filter -->
+  <div class="chip-scroll" id="subject-chips"></div>
+
+  <!-- Notes Grid -->
+  <div class="notes-grid" id="notes-grid">
+    <div class="skeleton" style="height:160px;border-radius:12px"></div>
+    <div class="skeleton" style="height:160px;border-radius:12px"></div>
+    <div class="skeleton" style="height:160px;border-radius:12px"></div>
+    <div class="skeleton" style="height:160px;border-radius:12px"></div>
+  </div>
+
+  <div id="notes-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📝</div>
+    <div class="empty-title">কোনো নোট নেই</div>
+    <div class="empty-desc">এই বিষয়ে এখনো কোনো নোট আপলোড হয়নি</div>
+    <button class="btn btn-primary btn-sm" onclick="openUploadModal()">নোট আপলোড করুন</button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openUploadModal()" title="নোট আপলোড করুন">➕</button>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="index.html"><span class="nav-icon">🏠</span><span class="nav-label">হোম</span></a>
+  <a class="bottom-nav-item active" href="notes.html"><span class="nav-icon">📝</span><span class="nav-label">নোটস</span></a>
+  <a class="bottom-nav-item" href="questions.html"><span class="nav-icon">❓</span><span class="nav-label">প্রশ্ন</span></a>
+  <a class="bottom-nav-item" href="quiz.html"><span class="nav-icon">📊</span><span class="nav-label">কুইজ</span></a>
+  <a class="bottom-nav-item" href="profile.html"><span class="nav-icon">👤</span><span class="nav-label">প্রোফাইল</span></a>
+</nav>
+
+<!-- ===== UPLOAD NOTE MODAL ===== -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📤 নোট আপলোড করুন</div>
+    <div class="form-group">
+      <label class="form-label">নোটের শিরোনাম *</label>
+      <input type="text" id="note-title" class="form-control" placeholder="যেমন: দশম শ্রেণীর গণিত — বীজগণিত">
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিষয় *</label>
+      <select id="note-subject" class="form-control">
+        <option value="">বিষয় নির্বাচন করুন</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ক্লাস</label>
+      <select id="note-class" class="form-control">
+        <option value="">ক্লাস নির্বাচন করুন</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিবরণ</label>
+      <textarea id="note-desc" class="form-control" placeholder="নোটে কী আছে সংক্ষেপে বলুন..." rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ছবি আপলোড (নোটের ছবি তুলুন)</label>
+      <div class="upload-zone" id="img-zone">
+        <input type="file" accept="image/*" capture="environment" id="note-img-input">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">ক্যামেরায় ছবি তুলুন বা গ্যালারি থেকে বেছে নিন</div>
+        <div class="upload-hint">JPG, PNG, WEBP — সর্বোচ্চ ৫MB</div>
+      </div>
+      <div id="img-preview"></div>
+      <div class="upload-progress" id="img-progress">
+        <div class="upload-progress-fill" id="img-progress-fill"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">PDF আপলোড (ঐচ্ছিক)</label>
+      <div class="upload-zone" id="pdf-zone">
+        <input type="file" accept="application/pdf" id="note-pdf-input">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">PDF ফাইল বেছে নিন</div>
+        <div class="upload-hint">সর্বোচ্চ ১০MB</div>
+      </div>
+      <div id="pdf-preview"></div>
+      <div class="upload-progress" id="pdf-progress">
+        <div class="upload-progress-fill" id="pdf-progress-fill"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" id="btn-upload-note" onclick="submitNote()">✅ নোট প্রকাশ করুন</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeUploadModal()">বাতিল</button>
+  </div>
+</div>
+
+<!-- ===== NOTE DETAIL MODAL ===== -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal note-detail-modal">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeDetailModal()">বন্ধ করুন</button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allNotes = [];
+let activeSubject = 'সব বিষয়';
+let imgUploader, pdfUploader;
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Build subject chips
+  const chips = document.getElementById('subject-chips');
+  SUBJECTS.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (s === 'সব বিষয়' ? ' active' : '');
+    chip.textContent = s;
+    chip.onclick = () => selectSubject(s, chip);
+    chips.appendChild(chip);
+  });
+
+  // Build select options
+  const subjSel = document.getElementById('note-subject');
+  const classSel = document.getElementById('note-class');
+  SUBJECTS.filter(s => s !== 'সব বিষয়').forEach(s => subjSel.appendChild(new Option(s, s)));
+  CLASSES.filter(c => c !== 'সব ক্লাস').forEach(c => classSel.appendChild(new Option(c, c)));
+
+  // Setup upload zones
+  imgUploader = setupUploadZone('img-zone', 'img-preview', 'image/*');
+  pdfUploader = setupUploadZone('pdf-zone', 'pdf-preview', 'application/pdf');
+
+  loadNotes();
+
+  // Check URL param
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  if (id) openNoteDetail(id);
+});
+
+function selectSubject(subject, chipEl) {
+  activeSubject = subject;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chipEl.classList.add('active');
+  renderNotes();
+}
+
+async function loadNotes() {
+  try {
+    const snap = await db.collection('notes').orderBy('createdAt', 'desc').limit(50).get();
+    allNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderNotes();
+  } catch(e) {
+    showToast('নোটস লোড করা সম্ভব হয়নি', 'error');
+    document.getElementById('notes-grid').innerHTML = '<p class="text-muted">লোড করা সম্ভব হয়নি</p>';
+  }
+}
+
+function filterNotes() {
+  renderNotes();
+}
+
+function renderNotes() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  let filtered = allNotes;
+  if (activeSubject !== 'সব বিষয়') filtered = filtered.filter(n => n.subject === activeSubject);
+  if (query) filtered = filtered.filter(n =>
+    (n.title||'').toLowerCase().includes(query) ||
+    (n.description||'').toLowerCase().includes(query) ||
+    (n.subject||'').toLowerCase().includes(query)
+  );
+
+  const grid = document.getElementById('notes-grid');
+  const empty = document.getElementById('notes-empty');
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(n => `
+    <div class="card note-card" onclick="openNoteDetail('${n.id}')">
+      <div class="note-thumb">
+        ${n.imageURL ? `<img src="${n.imageURL}" alt="${n.title}">` : '📄'}
+      </div>
+      <div class="note-body">
+        <div class="note-title">${n.title || 'নোট'}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          <span class="badge badge-primary">${n.subject || ''}</span>
+          ${n.fileURL ? `<span class="note-file-badge note-pdf">📄 PDF</span>` : ''}
+          ${n.imageURL ? `<span class="note-file-badge note-img">📷 ছবি</span>` : ''}
+        </div>
+        <div class="card-meta">👍 ${n.votes||0} · ${n.class||''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openNoteDetail(id) {
+  const note = allNotes.find(n => n.id === id);
+  if (!note) {
+    const snap = await db.collection('notes').doc(id).get();
+    if (!snap.exists) return showToast('নোট পাওয়া যায়নি', 'error');
+    openNoteDetailData({ id: snap.id, ...snap.data() });
+    return;
+  }
+  openNoteDetailData(note);
+}
+
+function openNoteDetailData(note) {
+  const currentUser = auth.currentUser;
+  document.getElementById('detail-content').innerHTML = `
+    ${note.imageURL ? `<img src="${note.imageURL}" class="detail-img" alt="Note">` : ''}
+    <h3 style="font-family:var(--font-heading);font-size:1.2rem;margin:12px 0 6px">${note.title||'নোট'}</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span class="badge badge-primary">${note.subject||''}</span>
+      <span class="badge badge-muted">${note.class||''}</span>
+    </div>
+    <p style="font-size:.875rem;color:var(--text-muted);line-height:1.6">${note.description||''}</p>
+    <div class="card-meta">👤 ${note.uploaderName||'Anonymous'} · ${timeAgo(note.createdAt)}</div>
+    ${note.fileURL ? `<a href="${note.fileURL}" target="_blank" class="btn btn-primary btn-full mt-12">📄 PDF ডাউনলোড করুন</a>` : ''}
+    <div class="action-row">
+      <button class="action-btn" id="vote-btn" onclick="voteNote('${note.id}')">👍 <span id="vote-count">${note.votes||0}</span></button>
+      ${currentUser && (currentUser.uid === note.uploaderId) ?
+        `<button class="action-btn" style="margin-left:auto;color:var(--danger)" onclick="deleteNote('${note.id}')">🗑️ মুছুন</button>` : ''}
+    </div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal').classList.remove('open');
+}
+
+async function voteNote(noteId) {
+  if (!auth.currentUser) return showToast('ভোট দিতে লগইন করুন', 'warning');
+  try {
+    const newVotes = await toggleVote('notes', noteId, auth.currentUser.uid);
+    document.getElementById('vote-count').textContent = newVotes;
+    const n = allNotes.find(n => n.id === noteId);
+    if (n) n.votes = newVotes;
+  } catch(e) { showToast('ভোট দেওয়া সম্ভব হয়নি', 'error'); }
+}
+
+async function deleteNote(noteId) {
+  confirmAction('এই নোট মুছে ফেলবেন?', async () => {
+    try {
+      await db.collection('notes').doc(noteId).delete();
+      allNotes = allNotes.filter(n => n.id !== noteId);
+      closeDetailModal();
+      renderNotes();
+      showToast('নোট মুছে ফেলা হয়েছে', 'success');
+    } catch(e) { showToast('মুছতে সমস্যা হয়েছে', 'error'); }
+  });
+}
+
+function openUploadModal() {
+  if (!auth.currentUser) {
+    showToast('আপলোড করতে লগইন করুন', 'warning');
+    setTimeout(() => window.location.href = 'auth.html', 1200);
+    return;
+  }
+  document.getElementById('upload-modal').classList.add('open');
+}
+function closeUploadModal() {
+  document.getElementById('upload-modal').classList.remove('open');
+}
+
+async function submitNote() {
+  if (!auth.currentUser) return;
+  const title   = document.getElementById('note-title').value.trim();
+  const subject = document.getElementById('note-subject').value;
+  const cls     = document.getElementById('note-class').value;
+  const desc    = document.getElementById('note-desc').value.trim();
+  const imgFile = imgUploader.getFile();
+  const pdfFile = pdfUploader.getFile();
+  const btn     = document.getElementById('btn-upload-note');
+
+  if (!title) return showToast('শিরোনাম দিন', 'error');
+  if (!subject) return showToast('বিষয় নির্বাচন করুন', 'error');
+  if (!imgFile && !pdfFile) return showToast('ছবি বা PDF দিন', 'error');
+
+  setButtonLoading(btn, true, 'আপলোড হচ্ছে...');
+  try {
+    let imageURL = '';
+    let fileURL  = '';
+
+    if (imgFile) {
+      const prog = document.getElementById('img-progress');
+      const fill = document.getElementById('img-progress-fill');
+      prog.style.display = '';
+      imageURL = await uploadImage(imgFile, 'notes', pct => fill.style.width = pct + '%');
+      prog.style.display = 'none';
+    }
+
+    if (pdfFile) {
+      const prog = document.getElementById('pdf-progress');
+      const fill = document.getElementById('pdf-progress-fill');
+      prog.style.display = '';
+      fileURL = await uploadPDF(pdfFile, pct => fill.style.width = pct + '%');
+      prog.style.display = 'none';
+    }
+
+    const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
+    const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
+
+    const noteRef = await db.collection('notes').add({
+      title, subject, class: cls, description: desc,
+      imageURL, fileURL,
+      uploaderId: auth.currentUser.uid, uploaderName: userName,
+      votes: 0, voters: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await addPoints(auth.currentUser.uid, 10, 'note_upload');
+    showToast('নোট সফলভাবে প্রকাশ হয়েছে! +10 পয়েন্ট 🎉', 'success');
+    closeUploadModal();
+    imgUploader.clear();
+    pdfUploader.clear();
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-subject').value = '';
+    document.getElementById('note-class').value = '';
+    document.getElementById('note-desc').value = '';
+    loadNotes();
+  } catch(e) {
+    showToast('আপলোড করা সম্ভব হয়নি: ' + e.message, 'error');
+  }
+  setButtonLoading(btn, false, '✅ নোট প্রকাশ করুন');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'এইমাত্র';
+  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
+  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
+  return `${Math.floor(s/86400)} দিন আগে`;
+}
+</script>
+</body>
+</html>
