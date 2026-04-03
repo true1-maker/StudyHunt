@@ -426,58 +426,73 @@ async function submitQuestion() {
 async function submitAnswer() {
   if (!auth.currentUser) return showToast('উত্তর দিতে লগইন করুন', 'warning');
   if (!currentQId) return;
-  const text    = document.getElementById('answer-text').value.trim();
-  const imgFile = ansImgUploader.getFile();
-  const btn     = document.getElementById('btn-answer');
 
-  if (!text && !imgFile) return showToast('উত্তর বা ছবি দিন', 'error');
+  const text = document.getElementById('answer-text').value.trim();
+  const imgFile = ansImgUploader.getFile(); // নিশ্চিত করুন setupUploadZone থেকে এটিই রিটার্ন হয়েছে
+  const btn = document.getElementById('btn-answer');
+  const progBar = document.getElementById('ans-img-prog');
+  const progFill = document.getElementById('ans-img-fill');
+
+  if (!text && !imgFile) return showToast('উত্তর লিখুন বা ছবি দিন', 'error');
+  
   setButtonLoading(btn, true, 'পাঠানো হচ্ছে...');
 
   try {
     let imageURL = '';
     if (imgFile) {
-      document.getElementById('ans-img-prog').style.display = '';
+      if (progBar) progBar.style.display = 'block';
+      // Cloudinary তে আপলোড
       imageURL = await uploadImage(imgFile, 'answers', pct => {
-        document.getElementById('ans-img-fill').style.width = pct + '%';
+        if (progFill) progFill.style.width = pct + '%';
       });
-      document.getElementById('ans-img-prog').style.display = 'none';
+      if (progBar) progBar.style.display = 'none';
     }
-    const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
-    const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
 
+    // ইউজারের নাম সংগ্রহ
+    const userSnap = await db.collection('users').doc(auth.currentUser.uid).get();
+    const userData = userSnap.data();
+    const userName = userData?.name || auth.currentUser.displayName || 'Anonymous';
+
+    // ১. উত্তর সেভ করা
     await db.collection('answers').add({
-      questionId: currentQId, answerText: text, imageURL,
-      userId: auth.currentUser.uid, userName,
-      votes: 0, voters: [], isBest: false,
+      questionId: currentQId,
+      answerText: text,
+      imageURL: imageURL,
+      userId: auth.currentUser.uid,
+      userName: userName,
+      votes: 0,
+      voters: [],
+      isBest: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    // ২. প্রশ্নের Answer Count আপডেট করা
     await db.collection('questions').doc(currentQId).update({
       answerCount: firebase.firestore.FieldValue.increment(1)
     });
+
+    // ৩. পয়েন্ট যোগ করা
     await addPoints(auth.currentUser.uid, 15, 'answer_posted');
+    
     showToast('উত্তর পোস্ট হয়েছে! +15 পয়েন্ট 🎉', 'success');
+
+    // ৪. ফর্ম রিসেট এবং UI রিফ্রেশ
     document.getElementById('answer-text').value = '';
     ansImgUploader.clear();
-    const q = allQuestions.find(q => q.id === currentQId);
-    if (q) { q.answerCount = (q.answerCount||0) + 1; renderQuestions(); }
-    loadAnswers(currentQId, q?.userId);
-  } catch(e) { showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); }
+    
+    // লোকাল অ্যারে আপডেট করা (যাতে পেজ রিলোড ছাড়াই সংখ্যা বাড়ে)
+    const qIndex = allQuestions.findIndex(q => q.id === currentQId);
+    if (qIndex !== -1) {
+      allQuestions[qIndex].answerCount = (allQuestions[qIndex].answerCount || 0) + 1;
+      renderQuestions(); 
+    }
+    
+    loadAnswers(currentQId, allQuestions[qIndex]?.userId);
+
+  } catch(e) { 
+    showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); 
+    if (progBar) progBar.style.display = 'none';
+  }
   setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
-}
-
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-function timeAgo(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (s < 60) return 'এইমাত্র';
-  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
-  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
-  return `${Math.floor(s/86400)} দিন আগে`;
-}
-</script>
-</body>
-</html>
+  }
+  
