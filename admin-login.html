@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — Admin Login</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    body { padding-bottom: 0; }
+    .admin-login-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(160deg, #0f2d1a 0%, #1a5c3a 60%, #27a05a 100%);
+    }
+    .admin-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .admin-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .admin-logo-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #1a5c3a, #27a05a);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 12px;
+      box-shadow: 0 8px 24px rgba(26,92,58,0.3);
+    }
+    .admin-brand {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .admin-subtitle {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .admin-badge {
+      background: var(--danger-light);
+      color: var(--danger);
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      letter-spacing: .04em;
+    }
+    .form-password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-muted);
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+      font-size: .82rem;
+      color: rgba(255,255,255,0.7);
+    }
+    .back-link:hover { color: white; }
+    .warning-box {
+      background: var(--danger-light);
+      border: 1px solid #f5c0c4;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: .8rem;
+      color: var(--danger);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="admin-login-page">
+  <div class="admin-card">
+    <div class="admin-logo">
+      <div class="admin-logo-icon">🛡️</div>
+      <div class="admin-brand">StudyNest</div>
+      <div class="admin-subtitle">
+        <span>অ্যাডমিন প্যানেল</span>
+        <span class="admin-badge">ADMIN ONLY</span>
+      </div>
+    </div>
+
+    <div class="warning-box">
+      ⚠️ এই পেজ শুধুমাত্র অ্যাডমিনদের জন্য। অননুমোদিত প্রবেশ নিষিদ্ধ।
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ইমেইল</label>
+      <input type="email" id="admin-email" class="form-control" placeholder="admin@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">পাসওয়ার্ড</label>
+      <div class="form-password-wrap">
+        <input type="password" id="admin-pass" class="form-control" placeholder="••••••••" style="padding-right:44px">
+        <button class="password-toggle" onclick="togglePass()">👁️</button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full btn-lg" id="btn-admin-login" onclick="adminLogin()">
+      🔐 অ্যাডমিন লগইন
+    </button>
+  </div>
+
+  <a href="index.html" class="back-link">← মূল সাইটে ফিরুন</a>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+// যদি আগে থেকেই login করা থাকে
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    const snap = await db.collection('users').doc(user.uid).get();
+    if (snap.exists && snap.data().isAdmin) {
+      window.location.href = 'admin.html';
+    }
+  }
+});
+
+function togglePass() {
+  const inp = document.getElementById('admin-pass');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const pass  = document.getElementById('admin-pass').value;
+  const btn   = document.getElementById('btn-admin-login');
+
+  if (!email || !pass) return showToast('ইমেইল ও পাসওয়ার্ড দিন', 'error');
+
+  setButtonLoading(btn, true, 'যাচাই হচ্ছে...');
+
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    const snap = await db.collection('users').doc(cred.user.uid).get();
+
+    if (!snap.exists || !snap.data().isAdmin) {
+      await auth.signOut();
+      showToast('আপনি অ্যাডমিন নন!', 'error');
+      setButtonLoading(btn, false, '🔐 অ্যাডমিন লগইন');
+      return;
+    }
+
+    showToast('স্বাগতম অ্যাডমিন! ✅', 'success');
+    setTimeout(() => window.location.href = 'admin.html', 800);
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found': 'ইমেইল পাওয়া যায়নি',
+      'auth/wrong-password': 'পাসওয়ার্ড ভুল',
+      'auth/invalid-email':  'সঠিক ইমেইল দিন',
+      'auth/too-many-requests': 'অনেক চেষ্টা হয়েছে, কিছুক্ষণ পর আবার চেষ্টা করুন',
+    };
+    showToast(msgs[e.code] || 'লগইন সম্ভব হয়নি', 'error');
+    setButtonLoading(btn, false, '🔐 অ্যাডমিন লগইন');
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') adminLogin();
+});
+</script>
+</body>
+</html>
+  
