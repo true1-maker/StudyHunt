@@ -173,14 +173,17 @@ async function toggleVote(collection, docId, userId) {
 
 // ===== POINTS SYSTEM =====
 async function addPoints(userId, points, reason) {
-  await db.collection('users').doc(userId).update({
-    points: firebase.firestore.FieldValue.increment(points)
-  });
-  // Log activity
-  await db.collection('activities').add({
-    userId, points, reason,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  try {
+    await db.collection('users').doc(userId).set({
+      points: firebase.firestore.FieldValue.increment(points)
+    }, { merge: true });
+    await db.collection('activities').add({
+      userId, points, reason,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {
+    console.warn('Points update skipped:', e.message);
+  }
 }
 
 // ===== ACTIVE NAV LINK =====
