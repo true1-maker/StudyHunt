@@ -335,7 +335,9 @@ async function voteQuestion(qId) {
 async function voteAnswer(aId) {
   if (!auth.currentUser) return showToast('ভোট দিতে লগইন করুন', 'warning');
   await toggleVote('answers', aId, auth.currentUser.uid);
-  loadAnswers(currentQId);
+  // নতুন যোগ করা লাইন
+  const qData = allQuestions.find(q => q.id === currentQId);
+  loadAnswers(currentQId, qData?.userId);
 }
 
 async function markBestAnswer(qId, aId) {
@@ -363,7 +365,9 @@ async function deleteAnswer(aId, qId) {
     await db.collection('questions').doc(qId).update({
       answerCount: firebase.firestore.FieldValue.increment(-1)
     });
-    loadAnswers(qId, null);
+    // নতুন যোগ করা লাইন
+    const qData = allQuestions.find(q => q.id === qId);
+    loadAnswers(qId, qData?.userId);
     showToast('উত্তর মুছে ফেলা হয়েছে', 'success');
   });
 }
