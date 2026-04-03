@@ -75,8 +75,9 @@ async function uploadImage(file, folder = 'uploads', onProgress = null) {
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const resourceType = file.type === 'application/pdf' ? 'raw' : 'image';
-xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`);
+    // যেহেতু এটা শুধুমাত্র ইমেজের ফাংশন, সরাসরি image/upload ব্যবহার করা নিরাপদ
+xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`);
+
     
     xhr.upload.onprogress = e => {
       if (onProgress && e.lengthComputable) {
