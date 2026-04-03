@@ -261,6 +261,12 @@ const SUBJECTS = [
   'ইতিহাস', 'ভূগোল', 'অর্থনীতি', 'ধর্ম', 'সাধারণ জ্ঞান', 'অন্যান্য'
 ];
 
+window.clearUpload = (zoneId, previewId) => {
+  const preview = document.getElementById(previewId); if (preview) preview.innerHTML = '';
+  const input = document.getElementById(zoneId)?.querySelector('input'); if (input) input.value = '';
+  window.lastClearedZone = zoneId; 
+};
+
 const CLASSES = [
   'সব ক্লাস', 'ষষ্ঠ শ্রেণী', 'সপ্তম শ্রেণী', 'অষ্টম শ্রেণী',
   'নবম শ্রেণী', 'দশম শ্রেণী', 'একাদশ শ্রেণী', 'দ্বাদশ শ্রেণী',
