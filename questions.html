@@ -195,10 +195,14 @@ function setSortOrder(order, btn) {
 
 async function loadQuestions() {
   try {
-    const snap = await db.collection('questions').orderBy('createdAt', 'desc').limit(50).get();
-    allQuestions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await db.collection('questions').limit(50).get();
+    allQuestions = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     renderQuestions();
   } catch(e) {
+    document.getElementById('questions-list').innerHTML = '';
+    document.getElementById('questions-empty').style.display = '';
     showToast('প্রশ্ন লোড করা সম্ভব হয়নি', 'error');
   }
 }
@@ -443,8 +447,4 @@ async function submitAnswer() {
 
     await db.collection('answers').add({
       questionId: currentQId, answerText: text, imageURL,
-      userId: auth.currentUser.uid, userName,
-      votes: 0, voters: [], isBest: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    await db.collection('questions').doc(currentQId).up
+      userId: auth.c
