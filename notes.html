@@ -41,7 +41,7 @@
 
 <!-- TOP NAV -->
 <nav class="top-nav">
-  <div class="nav-brand">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer">
     <div class="nav-logo">📚</div>
     <div class="nav-title">নোটস</div>
   </div>
@@ -61,11 +61,27 @@
   <!-- Search -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input type="text" class="search-input" id="search-input" placeholder="নোটস খুঁজুন..." oninput="filterNotes()">
+    <input type="text" class="search-input" id="search-input" placeholder="বিষয়, টপিক বা কীওয়ার্ড লিখুন..." oninput="filterNotes()">
+  </div>
+
+  <!-- Class + Sort filter row -->
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <select id="class-filter" class="form-control" style="flex:1;font-size:.82rem;padding:8px 10px;border-radius:var(--radius-full)" onchange="filterNotes()">
+      <option value="">সব ক্লাস</option>
+    </select>
+    <select id="sort-filter" class="form-control" style="flex:1;font-size:.82rem;padding:8px 10px;border-radius:var(--radius-full)" onchange="filterNotes()">
+      <option value="new">নতুন আগে</option>
+      <option value="votes">সেরা আগে</option>
+      <option value="pdf">শুধু PDF</option>
+      <option value="img">শুধু ছবি</option>
+    </select>
   </div>
 
   <!-- Subject Filter -->
   <div class="chip-scroll" id="subject-chips"></div>
+
+  <!-- Result count -->
+  <div id="search-result-info" style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;display:none"></div>
 
   <!-- Notes Grid -->
   <div class="notes-grid" id="notes-grid">
@@ -121,6 +137,11 @@
       <textarea id="note-desc" class="form-control" placeholder="নোটে কী আছে সংক্ষেপে বলুন..." rows="3"></textarea>
     </div>
     <div class="form-group">
+      <label class="form-label">টপিক / ট্যাগ (ঐচ্ছিক)</label>
+      <input type="text" id="note-tags" class="form-control" placeholder="যেমন: integration, differentiation, অ্যালজেব্রা">
+      <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">কমা দিয়ে আলাদা করুন — এটা search এ সাহায্য করবে</div>
+    </div>
+    <div class="form-group">
       <label class="form-label">ছবি আপলোড (নোটের ছবি তুলুন)</label>
       <div class="upload-zone" id="img-zone">
         <input type="file" accept="image/*" capture="environment" id="note-img-input">
@@ -152,8 +173,8 @@
 </div>
 
 <!-- ===== NOTE DETAIL MODAL ===== -->
-<div class="modal-overlay" id="detail-modal">
-  <div class="modal note-detail-modal">
+<div class="modal-overlay" id="detail-modal" style="align-items:stretch">
+  <div class="modal note-detail-modal" style="border-radius:0;max-height:100vh;height:100vh">
     <div class="modal-handle"></div>
     <div id="detail-content"></div>
     <button class="btn btn-ghost btn-full mt-8" onclick="closeDetailModal()">বন্ধ করুন</button>
@@ -224,20 +245,59 @@ function filterNotes() {
 }
 
 function renderNotes() {
-  const query = document.getElementById('search-input').value.toLowerCase();
-  let filtered = allNotes;
+  const query       = document.getElementById('search-input').value.toLowerCase().trim();
+  const classVal    = document.getElementById('class-filter').value;
+  const sortVal     = document.getElementById('sort-filter').value;
+  const infoEl      = document.getElementById('search-result-info');
+
+  let filtered = [...allNotes];
+
+  // Subject filter
   if (activeSubject !== 'সব বিষয়') filtered = filtered.filter(n => n.subject === activeSubject);
-  if (query) filtered = filtered.filter(n =>
-    (n.title||'').toLowerCase().includes(query) ||
-    (n.description||'').toLowerCase().includes(query) ||
-    (n.subject||'').toLowerCase().includes(query)
-  );
+
+  // Class filter
+  if (classVal) filtered = filtered.filter(n => n.class === classVal);
+
+  // Type filter
+  if (sortVal === 'pdf') filtered = filtered.filter(n => n.fileURL);
+  if (sortVal === 'img') filtered = filtered.filter(n => n.imageURL);
+
+  // Keyword search — title, description, subject সবে খোঁজে
+  if (query) {
+    filtered = filtered.filter(n =>
+      (n.title||'').toLowerCase().includes(query) ||
+      (n.description||'').toLowerCase().includes(query) ||
+      (n.subject||'').toLowerCase().includes(query) ||
+      (n.class||'').toLowerCase().includes(query) ||
+      (n.uploaderName||'').toLowerCase().includes(query)
+    );
+  }
+
+  // Sort
+  if (sortVal === 'votes') filtered.sort((a,b) => (b.votes||0) - (a.votes||0));
+  else if (sortVal === 'new' || sortVal === 'pdf' || sortVal === 'img') {
+    filtered.sort((a,b) => {
+      const ta = a.createdAt?.toDate?.() || new Date(0);
+      const tb = b.createdAt?.toDate?.() || new Date(0);
+      return tb - ta;
+    });
+  }
+
+  // Show result count when searching
+  if (query || classVal || activeSubject !== 'সব বিষয়') {
+    infoEl.style.display = '';
+    infoEl.textContent = `${filtered.length}টি নোট পাওয়া গেছে`;
+  } else {
+    infoEl.style.display = 'none';
+  }
 
   const grid = document.getElementById('notes-grid');
   const empty = document.getElementById('notes-empty');
   if (filtered.length === 0) {
     grid.innerHTML = '';
     empty.style.display = '';
+    document.querySelector('#notes-empty .empty-desc').textContent =
+      query ? `"${query}" এর জন্য কোনো নোট নেই` : 'এই বিষয়ে এখনো কোনো নোট আপলোড হয়নি';
     return;
   }
   empty.style.display = 'none';
@@ -273,11 +333,12 @@ async function openNoteDetail(id) {
 function openNoteDetailData(note) {
   const currentUser = auth.currentUser;
   document.getElementById('detail-content').innerHTML = `
-    ${note.imageURL ? `<img src="${note.imageURL}" class="detail-img" alt="Note">` : ''}
+    ${note.imageURL ? `<img src="${note.imageURL}" class="detail-img" alt="Note" onclick="zoomImage(this.src)">` : ''}
     <h3 style="font-family:var(--font-heading);font-size:1.2rem;margin:12px 0 6px">${note.title||'নোট'}</h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <span class="badge badge-primary">${note.subject||''}</span>
       <span class="badge badge-muted">${note.class||''}</span>
+    ${(note.tags||[]).length ? (note.tags.map(t => `<span class="badge badge-accent">${t}</span>`).join("")) : ""}
     </div>
     <p style="font-size:.875rem;color:var(--text-muted);line-height:1.6">${note.description||''}</p>
     <div class="card-meta">👤 ${note.uploaderName||'Anonymous'} · ${timeAgo(note.createdAt)}</div>
@@ -384,6 +445,7 @@ async function submitNote() {
     document.getElementById('note-subject').value = '';
     document.getElementById('note-class').value = '';
     document.getElementById('note-desc').value = '';
+    document.getElementById('note-tags').value = '';
     loadNotes();
   } catch(e) {
     showToast('আপলোড করা সম্ভব হয়নি: ' + e.message, 'error');
@@ -397,6 +459,14 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     if (e.target === overlay) overlay.classList.remove('open');
   });
 });
+
+function zoomImage(src) {
+  const overlay = document.createElement('div');
+  overlay.className = 'fullscreen-img-overlay';
+  overlay.innerHTML = '<img src="' + src + '" alt="Full">';
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
 
 function timeAgo(ts) {
   if (!ts) return '';
