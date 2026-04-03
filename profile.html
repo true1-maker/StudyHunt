@@ -79,7 +79,7 @@
 <body>
 
 <nav class="top-nav">
-  <div class="nav-brand">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer">
     <div class="nav-logo">📚</div>
     <div class="nav-title">প্রোফাইল</div>
   </div>
@@ -204,17 +204,17 @@
     <div class="modal-handle"></div>
     <div class="modal-title">📷 প্রোফাইল ছবি পরিবর্তন করুন</div>
     <div class="photo-options">
-      <button class="photo-opt-btn" onclick="triggerCamera()">
+      <label class="photo-opt-btn">
+        <input type="file" accept="image/*" capture="user" style="display:none" onchange="uploadProfilePhoto(this)">
         <span class="icon">📷</span>
         <span>ক্যামেরায় তুলুন</span>
-      </button>
-      <button class="photo-opt-btn" onclick="triggerGallery()">
+      </label>
+      <label class="photo-opt-btn">
+        <input type="file" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
         <span class="icon">🖼️</span>
         <span>গ্যালারি থেকে বেছে নিন</span>
-      </button>
+      </label>
     </div>
-    <input type="file" id="photo-input-camera"  accept="image/*" capture="user"  style="display:none" onchange="uploadProfilePhoto(this)">
-    <input type="file" id="photo-input-gallery" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
     <div class="upload-progress" id="photo-progress" style="margin-bottom:10px">
       <div class="upload-progress-fill" id="photo-progress-fill"></div>
     </div>
@@ -422,7 +422,7 @@ async function saveProfile() {
   const btn = document.getElementById('btn-save-profile');
   setButtonLoading(btn, true, 'সংরক্ষণ হচ্ছে...');
   try {
-    await db.collection('users').doc(user.uid).update({ name, institution, class: cls, bio });
+    await db.collection('users').doc(user.uid).set({ name, institution, class: cls, bio }, { merge: true });
     await user.updateProfile({ displayName: name });
     showToast('প্রোফাইল সংরক্ষিত হয়েছে ✅', 'success');
     document.getElementById('profile-name').textContent = name;
@@ -437,55 +437,28 @@ function closePhotoModal() { document.getElementById('photo-modal').classList.re
 function triggerCamera()   { document.getElementById('photo-input-camera').click(); }
 function triggerGallery()  { document.getElementById('photo-input-gallery').click(); }
 
-async function uploadProfilePhoto(input) {
+let selectedPhotoFile = null;
+
+function uploadProfilePhoto(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) return showToast('ছবি ৫MB এর বেশি হবে না', 'error');
-  const prog = document.getElementById('photo-progress');
-  const fill = document.getElementById('photo-progress-fill');
-  const prev = document.getElementById('photo-preview');
-  prog.style.display = '';
+  selectedPhotoFile = file;
 
-  // Show local preview
+  // শুধু preview দেখাও, upload করো না
+  const prev = document.getElementById('photo-preview');
   const reader = new FileReader();
   reader.onload = e => {
-    prev.innerHTML = `<img src="${e.target.result}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--primary)">`;
+    prev.innerHTML = `
+      <img src="${e.target.result}" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);margin-bottom:10px">
+      <button class="btn btn-primary btn-full" id="btn-save-photo" onclick="saveProfilePhoto()">✅ এই ছবি সংরক্ষণ করুন</button>
+      <button class="btn btn-ghost btn-full mt-8" onclick="cancelPhotoSelect()">❌ বাতিল করুন</button>
+    `;
   };
   reader.readAsDataURL(file);
-
-  try {
-    const url = await uploadImage(file, 'avatars', pct => fill.style.width = pct + '%');
-    await db.collection('users').doc(auth.currentUser.uid).update({ profileImage: url });
-    await auth.currentUser.updateProfile({ photoURL: url });
-    // Update profile avatar
-    const avatarEl = document.getElementById('profile-avatar');
-    avatarEl.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-    avatarEl.style.background = 'none';
-    showToast('প্রোফাইল ছবি আপডেট হয়েছে! ✅', 'success');
-    closePhotoModal();
-  } catch(e) { showToast('আপলোড সম্ভব হয়নি: ' + e.message, 'error'); }
-  prog.style.display = 'none';
 }
 
-function logout() {
-  if (confirm('লগআউট করবেন?')) {
-    auth.signOut().then(() => window.location.href = 'auth.html');
-  }
-}
-
-document.querySelectorAll('.modal-overlay').forEach(o => {
-  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-
-function timeAgo(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const s = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (s < 60) return 'এইমাত্র';
-  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
-  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
-  return `${Math.floor(s/86400)} দিন আগে`;
-}
-</script>
-</body>
-</html>
+function cancelPhotoSelect() {
+  selectedPhotoFile = null;
+  document.getElementById('photo-preview').innerHTML = '';
+  // file in
