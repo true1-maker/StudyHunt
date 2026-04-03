@@ -493,6 +493,11 @@ async function submitAnswer() {
     showToast('পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); 
     if (progBar) progBar.style.display = 'none';
   }
-    setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
-} // শুধুমাত্র একটি ব্র্যাকেট দিয়ে ফাংশন শেষ হবে
-  
+        setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
+}
+
+// মডাল ক্লোজিং লজিক (এটি এখানে পেস্ট করে দিন)
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
