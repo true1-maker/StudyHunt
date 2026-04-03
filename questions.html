@@ -446,5 +446,50 @@ async function submitAnswer() {
     const userName = userSnap.exists ? userSnap.data().name : auth.currentUser.displayName || 'Anonymous';
 
     await db.collection('answers').add({
-      questionId: currentQId, answerText: text, imageURL,
-      userId: auth.c
+      questionId: currentQId, 
+      answerText: text, 
+      imageURL,
+      userId: auth.currentUser.uid, 
+      userName,
+      votes: 0, 
+      voters: [], 
+      isBest: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // আপডেট করা হচ্ছে প্রশ্নের উত্তর সংখ্যা
+    await db.collection('questions').doc(currentQId).update({
+      answerCount: firebase.firestore.FieldValue.increment(1)
+    });
+
+    await addPoints(auth.currentUser.uid, 2, 'answer_posted');
+    showToast('উত্তর সফলভাবে পোস্ট হয়েছে! +2 পয়েন্ট 🎉', 'success');
+    
+    document.getElementById('answer-text').value = '';
+    ansImgUploader.clear();
+    loadAnswers(currentQId, null);
+  } catch(e) { 
+    showToast('উত্তর পাঠানো সম্ভব হয়নি: ' + e.message, 'error'); 
+  }
+  setButtonLoading(btn, false, '✅ উত্তর পোস্ট করুন');
+}
+
+// Modal closing on outside click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'এইমাত্র';
+  if (s < 3600) return `${Math.floor(s/60)} মিনিট আগে`;
+  if (s < 86400) return `${Math.floor(s/3600)} ঘণ্টা আগে`;
+  return `${Math.floor(s/86400)} দিন আগে`;
+}
+</script>
+</body>
+</html>
