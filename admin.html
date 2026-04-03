@@ -159,6 +159,7 @@
       <button class="admin-tab" onclick="switchTab('notes', this)">📝 নোটস</button>
       <button class="admin-tab" onclick="switchTab('questions', this)">❓ প্রশ্ন</button>
       <button class="admin-tab" onclick="switchTab('quizzes', this)">📊 কুইজ</button>
+      <button class="admin-tab" onclick="switchTab('answers', this)">💬 উত্তর</button>
     </div>
 
     <!-- ===== NOTICES TAB ===== -->
@@ -201,6 +202,13 @@
     <div id="tab-questions" class="tab-content" style="display:none">
       <div class="card">
         <div id="admin-questions-list"><div class="spinner" style="margin:16px auto"></div></div>
+      </div>
+    </div>
+
+    <!-- ===== ANSWERS TAB ===== -->
+    <div id="tab-answers" class="tab-content" style="display:none">
+      <div class="card">
+        <div id="admin-answers-list"><div class="spinner" style="margin:16px auto"></div></div>
       </div>
     </div>
 
@@ -267,6 +275,7 @@ function switchTab(tab, btn) {
   if (tab === 'notes')     loadAdminNotes();
   if (tab === 'questions') loadAdminQuestions();
   if (tab === 'quizzes')   loadAdminQuizzes();
+  if (tab === 'answers')   loadAdminAnswers();
 }
 
 // ===== NOTICES =====
@@ -355,7 +364,7 @@ function renderUsers() {
 
 async function toggleAdmin(userId, isAdmin) {
   try {
-    await db.collection('users').doc(userId).update({ isAdmin });
+    await db.collection('users').doc(userId).set({ isAdmin }, { merge: true });
     showToast(isAdmin ? 'Admin করা হয়েছে ✅' : 'Admin সরানো হয়েছে', 'success');
     const u = allUsers.find(u => u.id === userId);
     if (u) u.isAdmin = isAdmin;
@@ -437,6 +446,26 @@ async function deleteDoc(collection, id, reloadFn) {
   });
 }
 
+async function loadAdminAnswers() {
+  const list = document.getElementById('admin-answers-list');
+  list.innerHTML = '<div class="spinner" style="margin:16px auto"></div>';
+  try {
+    const snap = await db.collection('answers').orderBy('createdAt', 'desc').limit(30).get();
+    if (snap.empty) { list.innerHTML = '<p class="text-muted text-center">কোনো উত্তর নেই</p>'; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const a = d.data();
+      return `<div class="content-item">
+        <div class="content-item-info">
+          <div class="content-item-title">${(a.answerText||'').substring(0,60)}${a.answerText?.length>60?'...':''}</div>
+          <div class="content-item-meta">👤 ${a.userName||''} · 👍 ${a.votes||0}</div>
+          <div class="content-item-meta">${timeAgo(a.createdAt)}</div>
+        </div>
+        <button class="delete-btn" onclick="deleteDoc('answers','${d.id}', loadAdminAnswers)">🗑️ মুছুন</button>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<p class="text-muted text-center">লোড সম্ভব হয়নি</p>'; }
+}
+
 function timeAgo(ts) {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -448,5 +477,4 @@ function timeAgo(ts) {
 }
 </script>
 </body>
-                                                                                      </html>
-
+</html>
