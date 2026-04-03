@@ -476,9 +476,13 @@ async function submitAnswer() {
     // ৩. পয়েন্ট যোগ করা
     await addPoints(auth.currentUser.uid, 15, 'answer_posted');
     
-    showToast('উত্তর পোস্ট হয়েছে! +15 পয়েন্ট 🎉', 'success');
+        showToast('উত্তর পোস্ট হয়েছে! +15 পয়েন্ট 🎉', 'success');
+    
+    // ১.৫ সেকেন্ড পর পেজ রিফ্রেশ হবে যাতে উত্তরটি দেখা যায়
+    setTimeout(() => { location.reload(); }, 1500);
 
     // ৪. ফর্ম রিসেট এবং UI রিফ্রেশ
+
     document.getElementById('answer-text').value = '';
     ansImgUploader.clear();
     
