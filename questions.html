@@ -251,7 +251,9 @@ function renderQuestions() {
 
 async function openQuestionDetail(id) {
   currentQId = id;
-  const q = allQuestions.find(q => q.id === id) || await getQuestion(id);
+  let q = allQuestions.find(item => item.id === id);
+if (!q) q = await getQuestion(id);
+  
   if (!q) return;
 
   const user = auth.currentUser;
