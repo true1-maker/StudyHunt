@@ -220,9 +220,11 @@ function setupUploadZone(zoneId, previewId, acceptTypes = 'image/*') {
     if (file) handleFile(file);
   });
 
-  function handleFile(file) {
+    function handleFile(file) {
     selectedFile = file;
+    if (window.lastClearedZone === zoneId) window.lastClearedZone = null;
     if (preview && file.type.startsWith('image/')) {
+
       const reader = new FileReader();
       reader.onload = e => {
         preview.innerHTML = `
