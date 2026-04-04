@@ -25,10 +25,11 @@ function showToast(message, type = 'success', duration = 3000) {
 // Call this at the top of pages that require login
 function requireAuth(redirectTo = 'auth.html') {
   return new Promise((resolve) => {
-    auth.onAuthStateChanged(user => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
       if (!user) {
         window.location.href = redirectTo;
       } else {
+        unsubscribe();
         resolve(user);
       }
     });
