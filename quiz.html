@@ -391,10 +391,12 @@ async function showResult() {
   const wrong = total - correct;
 document.getElementById('r-score').textContent = correct;
 document.getElementById('r-total').textContent  = `/ ${total}`;
+const mPerQ = currentQuiz.marksPerQuestion || 5, nMark = currentQuiz.negativeMark || 0;
+const finalScore = (correct * mPerQ) - (wrong * nMark);
 document.getElementById('r-marking').innerHTML =
   `<span style="color:var(--primary)">✅ সঠিক: ${correct}</span>
    <span style="color:var(--danger)">❌ ভুল: ${wrong}</span>
-   <span style="color:var(--accent)">⭐ নম্বর: ${correct*5}/${total*5}</span>`;
+   <span style="color:var(--accent)">⭐ নম্বর: ${finalScore}/${total * mPerQ}</span>`;
 
   let grade = '', msg = '', gradeColor = '';
   if (pct >= 90) { grade='A+'; msg='অসাধারণ! তুমি দুর্দান্ত! 🏆'; gradeColor='var(--accent)'; }
