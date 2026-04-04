@@ -390,7 +390,7 @@ async function showResult() {
   });
   const pct = total ? Math.round((correct / total) * 100) : 0;
 
-  const wrong = total - correct;
+  const wrong = userAnswers.filter(a => a !== parseInt(currentQuiz.questions[userAnswers.indexOf(a)]?.correctAnswer)).length;
 document.getElementById('r-score').textContent = correct;
 document.getElementById('r-total').textContent  = `/ ${total}`;
 const mPerQ = currentQuiz.marksPerQuestion || 5, nMark = currentQuiz.negativeMark || 0;
