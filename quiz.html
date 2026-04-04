@@ -412,7 +412,9 @@ document.getElementById('r-marking').innerHTML =
   // Save score
   if (auth.currentUser) {
   const points = Math.max(0, (correct * (currentQuiz.marksPerQuestion || 5)) - (wrong * (currentQuiz.negativeMark || 0)));
+  if (typeof addPoints === 'function') {
   await addPoints(auth.currentUser.uid, points, 'quiz_completed');
+  }
     await db.collection('quizResults').add({
       userId: auth.currentUser.uid,
       quizId: currentQuiz.id,
