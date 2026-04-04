@@ -241,8 +241,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadQuizzes() {
   try {
-    const snap = await db.collection('quizzes').orderBy('createdAt', 'desc').get();
-    allQuizzes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await db.collection('quizzes').get();
+allQuizzes = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
     renderQuizList();
   } catch(e) {
     document.getElementById('quiz-list').innerHTML = '<p class="text-muted text-center">লোড করা সম্ভব হয়নি</p>';
