@@ -289,12 +289,14 @@ function startQuiz(quizId) {
   document.getElementById('nav-quiz-title').textContent = currentQuiz.name || 'কুইজ';
   document.getElementById('quiz-hub').style.display = 'none';
   document.getElementById('quiz-result').style.display = 'none';
-  document.getElementById('quiz-play').style.display = '';
+    if (!currentQuiz.questions[currentQIndex]) return showToast('প্রশ্ন লোড করা যাচ্ছে না', 'error');
+  document.getElementById('quiz-play').style.display = 'block';
   showQuestion();
 }
 
 function showQuestion() {
-  const q = currentQuiz.questions[currentQIndex];
+  const q = currentQuiz?.questions?.[currentQIndex];
+  if (!q) return showToast('প্রশ্ন খুঁজে পাওয়া যায়নি', 'error');
   const total = currentQuiz.questions.length;
   document.getElementById('q-counter').textContent = `${currentQIndex+1}/${total}`;
   document.getElementById('q-progress').style.width = `${((currentQIndex+1)/total)*100}%`;
