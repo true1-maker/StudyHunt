@@ -299,7 +299,6 @@ function confirmAction(message, onConfirm) {
 // ===== RUN AFTER DOM READY =====
 document.addEventListener('DOMContentLoaded', () => {
   setActiveNav();
-  // Watch auth state to update nav avatar
   auth.onAuthStateChanged(async user => {
     if (user) {
       const profile = await getCurrentUserProfile();
@@ -307,7 +306,10 @@ document.addEventListener('DOMContentLoaded', () => {
       else updateNavAvatar(user);
     }
   });
-  window.makeMeAdmin = async function() {
+});
+
+// 👇 একদম বাইরে
+window.makeMeAdmin = async function() {
   const user = auth.currentUser;
   if (!user) return alert('Login first');
 
@@ -320,5 +322,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { merge: true });
 
   alert('You are now admin!');
-  }
-});
+}
