@@ -15,6 +15,10 @@ function showToast(message, type = 'success', duration = 3000) {
   toast.className = `toast toast-${type}`;
   toast.innerHTML = `<span>${icons[type] || '📢'}</span><span>${message}</span>`;
   container.appendChild(toast);
+
+if (container.children.length > 4) {
+  container.firstChild.remove();
+}
   setTimeout(() => {
     toast.classList.add('removing');
     setTimeout(() => toast.remove(), 300);
