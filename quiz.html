@@ -273,7 +273,7 @@ function renderQuizList() {
 }
 
 function startQuiz(quizId) {
-  currentQuiz = allQuizzes.find(q => q.id === quizId);
+    currentQuiz = allQuizzes.find(q => String(q.id) === String(quizId));
   if (!currentQuiz || !currentQuiz.questions || !currentQuiz.questions.length) {
     return showToast('এই কুইজে প্রশ্ন নেই', 'error');
   }
