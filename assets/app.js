@@ -87,7 +87,12 @@ xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image
     };
     xhr.onload = () => {
       if (xhr.status === 200) {
-        const res = JSON.parse(xhr.responseText);
+        let res;
+try {
+  res = JSON.parse(xhr.responseText);
+} catch {
+  return reject(new Error('Invalid response'));
+}
         resolve(res.secure_url);
       } else {
         reject(new Error('Upload failed'));
@@ -241,7 +246,7 @@ function setupUploadZone(zoneId, previewId, acceptTypes = 'image/*') {
     }
   }
 
-  return { getFile: () => (window.lastClearedZone === zoneId) ? (selectedFile = null) : selectedFile,
+  return { getFile: () => (window.lastClearedZone === zoneId) ? null : selectedFile,
           clear: () => {
     selectedFile = null;
     if (preview) preview.innerHTML = '';
@@ -249,14 +254,6 @@ function setupUploadZone(zoneId, previewId, acceptTypes = 'image/*') {
   }};
 }
 
-// ===== CLEAR UPLOAD =====
-function clearUpload(zoneId, previewId) {
-  const preview = document.getElementById(previewId);
-  if (preview) preview.innerHTML = '';
-  const zone = document.getElementById(zoneId);
-  const input = zone && zone.querySelector('input[type="file"]');
-  if (input) input.value = '';
-}
 
 // ===== SUBJECTS LIST =====
 const SUBJECTS = [
