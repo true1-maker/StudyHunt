@@ -476,5 +476,42 @@ function timeAgo(ts) {
   return `${Math.floor(s/86400)} দিন আগে`;
 }
 </script>
+  <script>
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  const doc = await db.collection('users').doc(user.uid).get();
+  const data = doc.data();
+
+  if (!data || data.isAdmin !== true) {
+    alert("Access denied");
+    window.location.href = "index.html";
+  }
+});
+  ... (তোর সব code)
+
+</script>  <!-- আগের script শেষ -->
+
+<script>
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  const doc = await db.collection('users').doc(user.uid).get();
+  const data = doc.data();
+
+  if (!data || data.isAdmin !== true) {
+    alert("Access denied");
+    window.location.href = "index.html";
+  }
+});
+</script>
+
 </body>
 </html>
+  
