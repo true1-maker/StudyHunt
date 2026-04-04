@@ -251,10 +251,19 @@ function renderQuestions() {
 
 async function openQuestionDetail(id) {
   currentQId = id;
-  let q = allQuestions.find(item => item.id === id);
-if (!q) q = await getQuestion(id);
   
-  if (!q) return;
+  // ১. ক্লিক করার সাথে সাথেই মডাল খোল এবং স্পিনার দেখাও
+  document.getElementById('detail-content').innerHTML = `<div class="spinner" style="margin:40px auto"></div>`;
+  document.getElementById('detail-modal').classList.add('open');
+
+  // ২. এবার ডাটাবেস থেকে ডাটা খোঁজো
+  let q = allQuestions.find(item => item.id === id);
+  if (!q) q = await getQuestion(id);
+  
+  if (!q) {
+      document.getElementById('detail-content').innerHTML = `<p style="text-align:center;color:red;padding:20px;">প্রশ্নটি খুঁজে পাওয়া যায়নি</p>`;
+      return;
+  }
 
   const user = auth.currentUser;
   document.getElementById('detail-content').innerHTML = `
