@@ -358,6 +358,7 @@ function selectOption(index) {
 
 function autoNext() {
   if (!document.querySelector('.quiz-option.correct, .quiz-option.wrong')) {
+    showToast('সময় শেষ ⏱', 'warning');
     // Time's up — mark as wrong
     const q = currentQuiz.questions[currentQIndex];
     userAnswers[currentQIndex] = -1;
