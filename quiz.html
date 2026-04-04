@@ -362,8 +362,7 @@ function autoNext() {
     const q = currentQuiz.questions[currentQIndex];
     userAnswers[currentQIndex] = -1;
     document.querySelectorAll('.quiz-option').forEach((el, i) => {
-  if (i === parseInt(q.correctAnswer)) el.classList.add('correct');
-  else el.classList.add('wrong');
+  if (i === Number(q.correctAnswer)) el.classList.add('correct');
   el.style.cursor = 'default';
     });
     document.getElementById('btn-next').style.display = '';
@@ -386,7 +385,7 @@ async function showResult() {
   currentQuiz.questions.forEach((q, i) => {
     if (userAnswers[i] === parseInt(q.correctAnswer)) correct++;
   });
-  const pct = Math.round((correct / total) * 100);
+  const pct = total ? Math.round((correct / total) * 100) : 0;
 
   const wrong = total - correct;
 document.getElementById('r-score').textContent = correct;
