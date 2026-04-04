@@ -135,13 +135,14 @@
 </div>
 
 <!-- ===== QUIZ RESULT ===== -->
-<div id="quiz-result" class="container">
+<div id="quiz-result" class="container" style="padding-bottom:100px">
   <div class="result-circle">
     <div class="result-score" id="r-score">0</div>
     <div class="result-total" id="r-total">/ 0</div>
   </div>
   <div class="result-grade" id="r-grade"></div>
   <div class="result-message" id="r-message"></div>
+<div id="r-marking" style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;font-weight:700;font-size:.9rem"></div>
   <div style="display:flex;gap:10px;justify-content:center;margin-bottom:24px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="restartQuiz()">🔄 আবার দিন</button>
     <button class="btn btn-ghost" onclick="showQuizHub()">🏠 কুইজ তালিকা</button>
@@ -353,8 +354,9 @@ function autoNext() {
     const q = currentQuiz.questions[currentQIndex];
     userAnswers[currentQIndex] = -1;
     document.querySelectorAll('.quiz-option').forEach((el, i) => {
-      if (i === parseInt(q.correctAnswer)) el.classList.add('correct');
-      el.style.cursor = 'default';
+  if (i === parseInt(q.correctAnswer)) el.classList.add('correct');
+  else el.classList.add('wrong');
+  el.style.cursor = 'default';
     });
     document.getElementById('btn-next').style.display = '';
   }
@@ -378,8 +380,13 @@ async function showResult() {
   });
   const pct = Math.round((correct / total) * 100);
 
-  document.getElementById('r-score').textContent = correct;
-  document.getElementById('r-total').textContent  = `/ ${total}`;
+  const wrong = total - correct;
+document.getElementById('r-score').textContent = correct;
+document.getElementById('r-total').textContent  = `/ ${total}`;
+document.getElementById('r-marking').innerHTML =
+  `<span style="color:var(--primary)">✅ সঠিক: ${correct}</span>
+   <span style="color:var(--danger)">❌ ভুল: ${wrong}</span>
+   <span style="color:var(--accent)">⭐ নম্বর: ${correct*5}/${total*5}</span>`;
 
   let grade = '', msg = '', gradeColor = '';
   if (pct >= 90) { grade='A+'; msg='অসাধারণ! তুমি দুর্দান্ত! 🏆'; gradeColor='var(--accent)'; }
