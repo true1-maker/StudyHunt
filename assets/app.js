@@ -307,19 +307,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
-// 👇 একদম বাইরে
-window.makeMeAdmin = async function() {
-  const user = auth.currentUser;
-  if (!user) return alert('Login first');
-
-  if (user.email !== "versiontrue2@gmail.com") {
-    return alert("Access denied");
-  }
-
-  await db.collection('users').doc(user.uid).set({
-    isAdmin: true
-  }, { merge: true });
-
-  alert('You are now admin!');
-}
