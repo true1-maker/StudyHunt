@@ -307,8 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else updateNavAvatar(user);
     }
   });
-});
-window.makeMeAdmin = async function() {
+  window.makeMeAdmin = async function() {
   const user = auth.currentUser;
   if (!user) return alert('Login first');
 
@@ -321,4 +320,5 @@ window.makeMeAdmin = async function() {
   }, { merge: true });
 
   alert('You are now admin!');
-}
+  }
+});
