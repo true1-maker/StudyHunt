@@ -349,10 +349,11 @@ function selectOption(index) {
   userAnswers[currentQIndex] = index;
 
   document.querySelectorAll('.quiz-option').forEach((el, i) => {
-    if (i === correctIdx) el.classList.add('correct');
-    else if (i === index && index !== correctIdx) el.classList.add('wrong');
-    el.style.cursor = 'default';
-  });
+  if (i === correctIdx) el.classList.add('correct');
+  else if (i === index && index !== correctIdx) el.classList.add('wrong');
+  el.style.cursor = 'default';
+  el.onclick = null;   // 👈 multiple click prevent
+});
   document.getElementById('btn-next').style.display = '';
 }
 
