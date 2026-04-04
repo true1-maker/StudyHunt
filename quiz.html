@@ -273,7 +273,14 @@ function renderQuizList() {
 }
 
 function startQuiz(quizId) {
-    currentQuiz = allQuizzes.find(q => String(q.id) === String(quizId));
+  // ১. allQuizzes লোড হওয়ার আগেই ক্লিক করলে যেন ক্র্যাশ না করে
+  if (typeof allQuizzes === 'undefined' || !allQuizzes) {
+    return showToast('ডেটা এখনো লোড হয়নি, একটু অপেক্ষা করুন', 'warning');
+  }
+
+  // ২. String এ কনভার্ট করে আইডি ম্যাচ করো
+  currentQuiz = allQuizzes.find(q => String(q.id) === String(quizId));
+  
   if (!currentQuiz || !currentQuiz.questions || !currentQuiz.questions.length) {
     return showToast('এই কুইজে প্রশ্ন নেই', 'error');
   }
