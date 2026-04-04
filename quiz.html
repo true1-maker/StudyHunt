@@ -417,7 +417,7 @@ document.getElementById('r-marking').innerHTML =
       userId: auth.currentUser.uid,
       quizId: currentQuiz.id,
       quizName: currentQuiz.name,
-      score: correct, total, percent: pct,
+      score: finalScore, total: (total * mPerQ), percent: pct,
       completedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
