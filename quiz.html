@@ -184,7 +184,15 @@
         <option value="60">১ মিনিট</option>
         <option value="90">১.৫ মিনিট</option>
         <option value="120">২ মিনিট</option>
-      </select>
+            </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">সঠিক উত্তরের মার্কস</label>
+      <input type="number" id="new-quiz-marks" class="form-control" value="5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ভুল উত্তরের নেগেটিভ মার্কস</label>
+      <input type="number" id="new-quiz-negative" class="form-control" value="1">
     </div>
     <hr style="border-color:var(--border);margin:16px 0">
     <div style="font-weight:700;margin-bottom:12px">❓ প্রশ্ন যোগ করুন</div>
@@ -491,6 +499,8 @@ async function createQuiz() {
   const subj = document.getElementById('quiz-subj').value;
   const cls  = document.getElementById('quiz-cls').value;
   const time = document.getElementById('quiz-time').value;
+const marksPerQ = parseInt(document.getElementById('new-quiz-marks').value) || 5;
+const negMark = parseInt(document.getElementById('new-quiz-negative').value) || 0;
   if (!name || !subj) return showToast('নাম ও বিষয় দিন', 'error');
 
   const questions = [];
@@ -516,6 +526,8 @@ async function createQuiz() {
     await db.collection('quizzes').add({
       name, subject: subj, class: cls, questions,
       timePerQuestion: parseInt(time),
+marksPerQuestion: marksPerQ,
+negativeMark: negMark,
       createdBy: auth.currentUser.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
