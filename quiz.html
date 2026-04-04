@@ -371,6 +371,7 @@ function autoNext() {
 }
 
 function nextQuestion() {
+  if (userAnswers[currentQIndex] === undefined) userAnswers[currentQIndex] = -1; // unanswered fix
   currentQIndex++;
   if (currentQIndex >= currentQuiz.questions.length) showResult();
   else showQuestion();
