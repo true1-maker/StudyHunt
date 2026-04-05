@@ -87,7 +87,8 @@
     <div class="nav-logo">📚</div>
     <div class="nav-title" id="nav-quiz-title">কুইজ</div>
   </div>
-  <div class="nav-actions">
+    <div class="nav-actions" style="display:flex; gap:8px; align-items:center;">
+    <input type="text" id="global-search-input" class="form-control" placeholder="সার্চ..." style="padding: 4px 8px; font-size: 0.85rem; width: 120px;" onkeypress="if(event.key === 'Enter') executeGlobalSearch()">
     <button class="btn-icon" id="add-quiz-btn" onclick="openAddQuiz()" style="display:none" title="কুইজ যোগ করুন">➕</button>
     <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
   </div>
