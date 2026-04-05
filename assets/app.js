@@ -307,3 +307,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ===== GLOBAL SEARCH ROUTING =====
+function executeGlobalSearch() {
+  const query = document.getElementById('global-search-input').value.trim().toLowerCase();
+  if (!query) return;
+  window.location.href = `search.html?q=${encodeURIComponent(query)}`;
+}
+
+// ===== KEYWORD GENERATOR (For Database) =====
+function generateKeywords(text) {
+  // স্পেশাল ক্যারেক্টার বাদ দিয়ে বাক্যকে ছোট হাতের শব্দে ভেঙে অ্যারে বানাবে
+  const cleanText = text.toLowerCase().replace(/[^\w\s\u0980-\u09FF]/g, '');
+  return cleanText.split(/\s+/).filter(word => word.length > 1);
+}
+
