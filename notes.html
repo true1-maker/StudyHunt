@@ -45,9 +45,11 @@
     <div class="nav-logo">📚</div>
     <div class="nav-title">নোটস</div>
   </div>
-  <div class="nav-actions">
+  <div class="nav-actions" style="display:flex; gap:8px; align-items:center;">
+    <input type="text" id="global-search-input" class="form-control" placeholder="সার্চ..." style="padding: 4px 8px; font-size: 0.8rem; width: 110px; height: 32px;" onkeypress="if(event.key === 'Enter') executeGlobalSearch()">
+
     <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
-  </div>
+</div>
 </nav>
 
 <div id="toast-container"></div>
