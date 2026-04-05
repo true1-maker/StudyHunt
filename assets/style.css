@@ -47,6 +47,9 @@
   --text-color: #0f1419;
   --card-bg: #f7f9f9;
   --accent-color: #1d9bf0;
+     --bg: var(--bg-color);
+  --bg-card: var(--card-bg);
+  --text: var(--text-color);
 }
 
 /* ডিম থিম (Dim - Dark Blue) */
