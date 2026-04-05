@@ -345,3 +345,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedTheme) setTheme(savedTheme);
 });
 
+// মেনু টগল ফাংশন
+function toggleSideMenu() {
+  const menu = document.getElementById('side-dropdown');
+  menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+// মেনুর বাইরে ক্লিক করলে বন্ধ হবে
+window.addEventListener('click', (e) => {
+  const menu = document.getElementById('side-dropdown');
+  if (menu && !menu.contains(e.target) && !e.target.classList.contains('btn-icon')) {
+    menu.style.display = 'none';
+  }
+});
+
