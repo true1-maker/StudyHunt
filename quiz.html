@@ -533,11 +533,18 @@ const negMark = parseInt(document.getElementById('new-quiz-negative').value) || 
   const btn = document.getElementById('btn-create-quiz');
   setButtonLoading(btn, true, 'তৈরি হচ্ছে...');
   try {
+        // নাম, সাবজেক্ট এবং ক্লাস মিলিয়ে কি-ওয়ার্ড তৈরি করো
+    const searchKeywords = generateKeywords(`${name} ${subj} ${cls}`);
+
     await db.collection('quizzes').add({
-      name, subject: subj, class: cls, questions,
+      name, 
+      subject: subj, 
+      class: cls, 
+      questions,
       timePerQuestion: parseInt(time),
-marksPerQuestion: marksPerQ,
-negativeMark: negMark,
+      marksPerQuestion: marksPerQ, // তোর আগের কোড ঠিক থাকলো
+      negativeMark: negMark,       // তোর আগের কোড ঠিক থাকলো
+      keywords: searchKeywords,    // নতুন অ্যাড হলো সার্চের জন্য
       createdBy: auth.currentUser.uid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
