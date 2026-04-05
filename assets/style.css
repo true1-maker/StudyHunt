@@ -42,7 +42,33 @@
   --nav-h:         64px;
   --bottom-nav-h:  68px;
   --transition:    0.2s ease;
+
+     --bg-color: #ffffff;
+  --text-color: #0f1419;
+  --card-bg: #f7f9f9;
+  --accent-color: #1d9bf0;
 }
+
+/* ডিম থিম (Dim - Dark Blue) */
+body.theme-dim {
+  --bg: #15202b;
+  --bg-card: #1e2732;
+  --bg-nav: #15202b;
+  --text: #ffffff;
+  --border: #38444d;
+  --text-muted: #8899a6;
+}
+
+/* লাইটস আউট (Lights Out - Pure Black) */
+body.theme-black {
+  --bg: #000000;
+  --bg-card: #16181c;
+  --bg-nav: #000000;
+  --text: #e7e9ea;
+  --border: #2f3336;
+  --text-muted: #71767b;
+}
+
 
 /* ===== RESET ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
