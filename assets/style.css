@@ -1055,3 +1055,36 @@ select.form-control { cursor: pointer; appearance: none; background-image: url("
   .bottom-nav { max-width: 480px; left: 50%; transform: translateX(-50%); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
   .fab { right: calc(50% - 240px + 20px); }
 }
+
+/* নববার এলাইনমেন্ট ফিক্স */
+.top-nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0; /* লোগো যেন চ্যাপ্টা না হয়ে যায় */
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto; /* সব অ্যাকশন বাটনকে ডানদিকে ঠেলে দিবে */
+}
+
+/* মোবাইল স্ক্রিনে সার্চ বার ছোট করা যাতে সব এক লাইনে ধরে */
+@media (max-width: 400px) {
+    #global-search-input {
+        width: 80px !important;
+    }
+    .nav-title {
+        display: none; /* খুব ছোট ফোনে শুধু লোগো দেখাবে, নাম না */
+    }
+}
