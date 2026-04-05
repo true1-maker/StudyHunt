@@ -322,3 +322,26 @@ function generateKeywords(text) {
   return cleanText.split(/\s+/).filter(word => word.length > 1);
 }
 
+// ৩২৪ নম্বর লাইন থেকে এই কোডটুকু পেস্ট কর:
+
+// ===== THEME MANAGEMENT (Twitter Style) =====
+function setTheme(themeName) {
+  const body = document.body;
+  
+  // আগের সব থিম ক্লাস মুছে ফেলা
+  body.classList.remove('theme-dim', 'theme-black');
+  
+  // নতুন থিম যোগ করা
+  if (themeName === 'dim') body.classList.add('theme-dim');
+  if (themeName === 'black') body.classList.add('theme-black');
+  
+  // ইউজারের চয়েস ব্রাউজারে সেভ করে রাখা
+  localStorage.setItem('selectedTheme', themeName);
+}
+
+// পেজ লোড হওয়ার সময় আগের সেভ করা থিম অটোমেটিক চালু করা
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('selectedTheme');
+  if (savedTheme) setTheme(savedTheme);
+});
+
