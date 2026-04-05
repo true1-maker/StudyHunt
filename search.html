@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>সার্চ রেজাল্ট</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-brand"><div class="nav-logo">🔍</div><div class="nav-title">সার্চ রেজাল্ট</div></div>
+    <div class="nav-actions"><button class="btn-ghost" onclick="window.history.back()">ফিরে যান</button></div>
+  </nav>
+
+  <div class="container" style="padding-top: 20px;">
+    <h3 id="search-title">খোঁজা হচ্ছে...</h3>
+    <div id="search-results-list">
+      <div class="spinner spinner-sm" style="margin:20px auto"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="assets/firebase-config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // URL থেকে সার্চ প্যারামিটার বের করা
+      const params = new URLSearchParams(window.location.search);
+      const query = params.get('q');
+      
+      if (!query) {
+        document.getElementById('search-title').innerText = "কোনো সার্চ টার্ম দেওয়া হয়নি";
+        document.getElementById('search-results-list').innerHTML = "";
+        return;
+      }
+
+      document.getElementById('search-title').innerText = `"${query}" এর জন্য রেজাল্ট:`;
+      const resultsContainer = document.getElementById('search-results-list');
+      const lowerQuery = query.toLowerCase();
+
+      try {
+        // ফায়ারবেস থেকে array-contains কুয়েরি দিয়ে ডাটা টানা
+        const quizSnap = await db.collection('quizzes')
+                                 .where('keywords', 'array-contains', lowerQuery)
+                                 .get();
+
+        if (quizSnap.empty) {
+          resultsContainer.innerHTML = '<p class="text-muted">কোনো রেজাল্ট পাওয়া যায়নি।</p>';
+          return;
+        }
+
+        // ডাটা রেন্ডার করা (তোর কুইজ কার্ডের মতো ডিজাইন)
+        resultsContainer.innerHTML = quizSnap.docs.map(doc => {
+          const q = doc.data();
+          return `
+            <div class="quiz-card" onclick="window.location.href='quiz.html?id=${doc.id}'">
+              <div class="quiz-card-body">
+                <div class="quiz-card-title">${q.name || 'কুইজ'}</div>
+                <div class="quiz-card-meta"><span>📚 ${q.subject || ''}</span></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        resultsContainer.innerHTML = `<p class="text-danger">এরর: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
+
