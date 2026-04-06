@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest — কুইজ</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .quiz-hub { padding-bottom: 16px; }
+    .quiz-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .quiz-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .quiz-card-banner {
+      height: 6px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    }
+    .quiz-card-body { padding: 14px; }
+    .quiz-card-title { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+    .quiz-card-meta { font-size: .8rem; color: var(--text-muted); display: flex; gap: 12px; }
+
+    /* Quiz Play Screen */
+    #quiz-play { display: none; }
+    .quiz-header-bar {
+      background: white;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: var(--nav-h);
+      z-index: 50;
+    }
+    .quiz-q-counter { font-size: .8rem; color: var(--text-muted); white-space: nowrap; }
+    .quiz-progress-bar { flex: 1; }
+
+    .quiz-q-text { font-size: 1rem; font-weight: 600; line-height: 1.5; margin-bottom: 16px; }
+    .quiz-q-img { width: 100%; border-radius: var(--radius); max-height: 180px; object-fit: contain; background: var(--bg); margin-bottom: 14px; }
+
+    /* Result Screen */
+    #quiz-result { display: none; text-align: center; padding: 32px 16px; }
+    .result-circle {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 6px solid var(--primary);
+    }
+    .result-score { font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+    .result-total { font-size: .8rem; color: var(--text-muted); }
+    .result-grade { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+    .result-message { color: var(--text-muted); font-size: .875rem; margin-bottom: 24px; }
+    .review-item {
+      background: var(--bg);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: left;
+      border-left: 4px solid var(--border);
+    }
+    .review-item.correct { border-left-color: var(--primary-light); }
+    .review-item.wrong   { border-left-color: var(--danger); }
+    .review-item .q-text { font-size: .85rem; font-weight: 600; margin-bottom: 6px; }
+    .review-item .ans-row { font-size: .8rem; }
+    .review-item .correct-ans { color: var(--primary); font-weight: 600; }
+    .review-item .wrong-ans { color: var(--danger); text-decoration: line-through; }
+
+    /* Add Quiz (Admin) */
+    .add-quiz-modal .form-group { margin-bottom: 14px; }
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="menu-container" style="position: relative; margin-right: 10px;">
+  <button class="btn-icon" onclick="toggleSideMenu()" style="font-size: 1.5rem; background: none; border: none; cursor: pointer; color: var(--text); padding: 5px;">⋮</button>
+  
+  <div id="side-dropdown" style="display: none; position: absolute; top: 45px; left: 0; background: var(--bg-card); min-width: 180px; box-shadow: var(--shadow-lg); z-index: 1000; border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+    <div style="padding: 10px 16px;">
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; font-weight: bold;">Display Theme</p>
+      <div style="display: flex; justify-content: space-between;">
+        <button onclick="setTheme('light')" style="background:#ffffff; border:1px solid #ccc; width:25px; height:25px; border-radius:50%; cursor:pointer;"></button>
+        <button onclick="setTheme('dim')" style="background:#15202b; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer;"></button>
+        <button onclick="setTheme('black')" style="background:#000000; border:none; width:25px; height:25px; border-radius:50%; cursor:pointer;"></button>
+      </div>
+    </div>
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+    <a href="profile.html" style="color: var(--text); padding: 12px 16px; text-decoration: none; display: block;">👤 Profile</a>
+    <a href="index.html" style="color: var(--text); padding: 12px 16px; text-decoration: none; display: block; border-top: 1px solid var(--border);">🏠 Home</a>
+  </div>
+  </div>
+  
+  <div class="nav-brand">
+    <div class="nav-logo">📚</div>
+    <div class="nav-title" id="nav-quiz-title">কুইজ</div>
+  </div>
+    <div class="nav-actions" style="display:flex; gap:8px; align-items:center;">
+    <input type="text" id="global-search-input" class="form-control" placeholder="সার্চ..." style="padding: 4px 8px; font-size: 0.85rem; width: 120px;" onkeypress="if(event.key === 'Enter') executeGlobalSearch()">
+    <button class="btn-icon" id="add-quiz-btn" onclick="openAddQuiz()" style="display:none" title="কুইজ যোগ করুন">➕</button>
+    <div class="nav-avatar avatar-placeholder" id="nav-avatar" onclick="window.location.href='profile.html'">👤</div>
+  </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<!-- ===== QUIZ HUB ===== -->
+<div class="container quiz-hub" id="quiz-hub">
+  <div class="page-header">
+    <div class="page-title">📊 সেলফ টেস্ট</div>
+    <div class="page-subtitle">নিজেকে যাচাই করুন, নিজের মতো করে</div>
+  </div>
+
+  <div class="chip-scroll" id="quiz-subject-chips"></div>
+
+  <div id="quiz-list">
+    <div class="skeleton" style="height:80px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:80px;border-radius:12px;margin-bottom:12px"></div>
+    <div class="skeleton" style="height:80px;border-radius:12px"></div>
+  </div>
+  <div id="quiz-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📊</div>
+    <div class="empty-title">এখনো কুইজ নেই</div>
+    <div class="empty-desc">অ্যাডমিন শীঘ্রই কুইজ যোগ করবেন</div>
+  </div>
+</div>
+
+<!-- ===== QUIZ PLAY ===== -->
+<div id="quiz-play">
+  <!-- Progress bar under nav -->
+  <div class="quiz-header-bar">
+    <div class="quiz-q-counter" id="q-counter">১/১০</div>
+    <div class="quiz-progress-bar">
+      <div class="progress"><div class="progress-fill" id="q-progress" style="width:10%"></div></div>
+    </div>
+    <div class="quiz-timer" id="q-timer">⏱ 30</div>
+  </div>
+  <div class="container" style="padding-top:16px">
+    <div id="q-question-text" class="quiz-q-text"></div>
+    <img id="q-question-img" class="quiz-q-img" style="display:none">
+    <div id="q-options"></div>
+    <button class="btn btn-primary btn-full btn-lg" id="btn-next" onclick="nextQuestion()" style="display:none;margin-top:12px">পরবর্তী →</button>
+  </div>
+</div>
+
+<!-- ===== QUIZ RESULT ===== -->
+<div id="quiz-result" class="container" style="padding-bottom:100px">
+  <div class="result-circle">
+    <div class="result-score" id="r-score">0</div>
+    <div class="result-total" id="r-total">/ 0</div>
+  </div>
+  <div class="result-grade" id="r-grade"></div>
+  <div class="result-message" id="r-message"></div>
+<div id="r-marking" style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;font-weight:700;font-size:.9rem"></div>
+  <div style="display:flex;gap:10px;justify-content:center;margin-bottom:24px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="restartQuiz()">🔄 আবার দিন</button>
+    <button class="btn btn-ghost" onclick="showQuizHub()">🏠 কুইজ তালিকা</button>
+  </div>
+  <div style="text-align:left;font-weight:700;margin-bottom:12px">📋 পর্যালোচনা</div>
+  <div id="review-list"></div>
+</div>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="index.html"><span class="nav-icon">🏠</span><span class="nav-label">হোম</span></a>
+  <a class="bottom-nav-item" href="notes.html"><span class="nav-icon">📝</span><span class="nav-label">নোটস</span></a>
+  <a class="bottom-nav-item" href="questions.html"><span class="nav-icon">❓</span><span class="nav-label">প্রশ্ন</span></a>
+  <a class="bottom-nav-item active" href="quiz.html"><span class="nav-icon">📊</span><span class="nav-label">কুইজ</span></a>
+  <a class="bottom-nav-item" href="profile.html"><span class="nav-icon">👤</span><span class="nav-label">প্রোফাইল</span></a>
+</nav>
+
+<!-- ADD QUIZ MODAL (Admin only) -->
+<div class="modal-overlay" id="add-quiz-modal">
+  <div class="modal add-quiz-modal" style="max-height:92vh">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ নতুন কুইজ তৈরি করুন</div>
+    <div class="form-group">
+      <label class="form-label">কুইজের নাম</label>
+      <input id="quiz-name" type="text" class="form-control" placeholder="যেমন: গণিত — বীজগণিত কুইজ">
+    </div>
+    <div class="form-group">
+      <label class="form-label">বিষয়</label>
+      <select id="quiz-subj" class="form-control"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ক্লাস</label>
+      <select id="quiz-cls" class="form-control"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">প্রতি প্রশ্নের সময় (সেকেন্ড)</label>
+      <select id="quiz-time" class="form-control">
+        <option value="30">৩০ সেকেন্ড</option>
+        <option value="45">৪৫ সেকেন্ড</option>
+        <option value="60">১ মিনিট</option>
+        <option value="90">১.৫ মিনিট</option>
+        <option value="120">২ মিনিট</option>
+            </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">সঠিক উত্তরের মার্কস</label>
+      <input type="number" id="new-quiz-marks" class="form-control" value="5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ভুল উত্তরের নেগেটিভ মার্কস</label>
+      <input type="number" id="new-quiz-negative" class="form-control" value="1">
+    </div>
+    <hr style="border-color:var(--border);margin:16px 0">
+    <div style="font-weight:700;margin-bottom:12px">❓ প্রশ্ন যোগ করুন</div>
+    <div id="questions-container"></div>
+    <button class="btn btn-ghost btn-full mt-8" onclick="addQuestionField()">➕ আরেকটি প্রশ্ন</button>
+    <button class="btn btn-primary btn-full btn-lg mt-12" id="btn-create-quiz" onclick="createQuiz()">✅ কুইজ তৈরি করুন</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeAddQuiz()">বাতিল</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="assets/firebase-config.js"></script>
+<script src="assets/app.js"></script>
+<script>
+let allQuizzes = [];
+let currentQuiz = null;
+let currentQIndex = 0;
+let userAnswers = [];
+let timerInterval = null;
+let timeLeft = 30;
+let activeSubjectFilter = 'সব বিষয়';
+let qCount = 0;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Subject chips
+  const chips = document.getElementById('quiz-subject-chips');
+  SUBJECTS.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (s === 'সব বিষয়' ? ' active' : '');
+    chip.textContent = s;
+    chip.onclick = () => {
+      activeSubjectFilter = s;
+      document.querySelectorAll('#quiz-subject-chips .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      renderQuizList();
+    };
+    chips.appendChild(chip);
+  });
+
+  loadQuizzes();
+
+  // Check if admin
+  auth.onAuthStateChanged(async user => {
+    if (user) {
+      const snap = await db.collection('users').doc(user.uid).get();
+      if (snap.exists && snap.data().isAdmin) {
+        document.getElementById('add-quiz-btn').style.display = '';
+      }
+    }
+  });
+});
+
+async function loadQuizzes() {
+  try {
+    const snap = await db.collection('quizzes').get();
+allQuizzes = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    renderQuizList();
+  } catch(e) {
+    document.getElementById('quiz-list').innerHTML = '<p class="text-muted text-center">লোড করা সম্ভব হয়নি</p>';
+  }
+}
+
+function renderQuizList() {
+  let filtered = allQuizzes;
+  if (activeSubjectFilter !== 'সব বিষয়') filtered = filtered.filter(q => q.subject === activeSubjectFilter);
+  const list  = document.getElementById('quiz-list');
+  const empty = document.getElementById('quiz-empty');
+  if (filtered.length === 0) { list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = filtered.map(q => `
+    <div class="quiz-card" onclick="startQuiz('${q.id}')">
+      <div class="quiz-card-banner"></div>
+      <div class="quiz-card-body">
+        <div class="quiz-card-title">${q.name||'কুইজ'}</div>
+        <div class="quiz-card-meta">
+          <span>📚 ${q.subject||''}</span>
+          <span>❓ ${(q.questions||[]).length} প্রশ্ন</span>
+          <span>⏱ ${q.timePerQuestion||30}s/প্রশ্ন</span>
+          <span class="badge badge-primary" style="font-size:.65rem">${q.class||''}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function startQuiz(quizId) {
+  // ১. allQuizzes লোড হওয়ার আগেই ক্লিক করলে যেন ক্র্যাশ না করে
+  if (typeof allQuizzes === 'undefined' || !allQuizzes) {
+    return showToast('ডেটা এখনো লোড হয়নি, একটু অপেক্ষা করুন', 'warning');
+  }
+
+  // ২. String এ কনভার্ট করে আইডি ম্যাচ করো
+  currentQuiz = allQuizzes.find(q => String(q.id) === String(quizId));
+  
+  if (!currentQuiz || !currentQuiz.questions || !currentQuiz.questions.length) {
+    return showToast('এই কুইজে প্রশ্ন নেই', 'error');
+  }
+  currentQIndex = 0;
+  userAnswers = [];
+  document.getElementById('nav-quiz-title').textContent = currentQuiz.name || 'কুইজ';
+  document.getElementById('quiz-hub').style.display = 'none';
+  document.getElementById('quiz-result').style.display = 'none';
+    if (!currentQuiz.questions[currentQIndex]) return showToast('প্রশ্ন লোড করা যাচ্ছে না', 'error');
+  document.getElementById('quiz-play').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = currentQuiz?.questions?.[currentQIndex];
+  if (!q) return showToast('প্রশ্ন খুঁজে পাওয়া যায়নি', 'error');
+  const total = currentQuiz.questions.length;
+  document.getElementById('q-counter').textContent = `${currentQIndex+1}/${total}`;
+  document.getElementById('q-progress').style.width = `${((currentQIndex+1)/total)*100}%`;
+  document.getElementById('q-question-text').textContent = q.question || '';
+  const imgEl = document.getElementById('q-question-img');
+  if (q.imageURL) { imgEl.src = q.imageURL; imgEl.style.display = ''; }
+  else imgEl.style.display = 'none';
+
+  const opts = document.getElementById('q-options');
+  const letters = ['ক', 'খ', 'গ', 'ঘ'];
+  opts.innerHTML = [q.optionA, q.optionB, q.optionC, q.optionD].map((opt, i) => `
+    <div class="quiz-option" id="opt-${i}" onclick="selectOption(${i})">
+      <div class="option-letter">${letters[i]}</div>
+      <div>${opt || ''}</div>
+    </div>
+  `).join('');
+  document.getElementById('btn-next').style.display = 'none';
+
+  // Start timer
+  clearInterval(timerInterval);
+  timeLeft = parseInt(currentQuiz.timePerQuestion || 30);
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) { clearInterval(timerInterval); autoNext(); }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('q-timer');
+  el.textContent = `⏱ ${timeLeft}`;
+  el.className = 'quiz-timer' + (timeLeft <= 10 ? ' danger' : timeLeft <= 20 ? ' warning' : '');
+}
+
+function selectOption(index) {
+  if (document.querySelector('.quiz-option.correct, .quiz-option.wrong')) return;
+  clearInterval(timerInterval);
+  const q = currentQuiz.questions[currentQIndex];
+  const correctIdx = parseInt(q.correctAnswer);
+  userAnswers[currentQIndex] = index;
+
+  document.querySelectorAll('.quiz-option').forEach((el, i) => {
+  if (i === correctIdx) el.classList.add('correct');
+  else if (i === index && index !== correctIdx) el.classList.add('wrong');
+  el.style.cursor = 'default';
+  el.onclick = null;   // 👈 multiple click prevent
+});
+  document.getElementById('btn-next').style.display = '';
+}
+
+function autoNext() {
+  if (!document.querySelector('.quiz-option.correct, .quiz-option.wrong')) {
+    showToast('সময় শেষ ⏱', 'warning');
+    // Time's up — mark as wrong
+    const q = currentQuiz.questions[currentQIndex];
+    userAnswers[currentQIndex] = -1;
+    document.querySelectorAll('.quiz-option').forEach((el, i) => {
+  if (i === Number(q.correctAnswer)) el.classList.add('correct');
+  el.style.cursor = 'default';
+    });
+    document.getElementById('btn-next').style.display = '';
+  }
+}
+
+function nextQuestion() {
+  if (userAnswers[currentQIndex] === undefined) userAnswers[currentQIndex] = -1; // unanswered fix
+  currentQIndex++;
+  if (currentQIndex >= currentQuiz.questions.length) showResult();
+  else showQuestion();
+}
+
+async function showResult() { // ছোট হাতের a ব্যবহার করবি
+  clearInterval(timerInterval);
+  
+  // UI কন্টেইনার ম্যানেজমেন্ট
+  const quizPlay = document.getElementById('quiz-play');
+  const quizResult = document.getElementById('quiz-result');
+  if (quizPlay) quizPlay.style.display = 'none';
+  if (quizResult) quizResult.style.display = 'block';
+
+  const total = currentQuiz.questions.length;
+  let correct = 0;
+
+  // সঠিক উত্তর গণনা (Clean Loop)
+  currentQuiz.questions.forEach((q, i) => {
+    if (userAnswers[i] !== undefined && parseInt(userAnswers[i]) === parseInt(q.correctAnswer)) {
+      correct++;
+    }
+  });
+
+  const pct = total ? Math.round((correct / total) * 100) : 0;
+  const wrong = total - correct; // সিম্পল এবং নির্ভুল লজিক
+  const mPerQ = parseInt(currentQuiz.marksPerQuestion) || 5;
+  const nMark = parseInt(currentQuiz.negativeMark) || 0;
+  const finalScore = (correct * mPerQ) - (wrong * nMark);
+
+  // রেজাল্ট আপডেট
+  document.getElementById('r-score').textContent = correct;
+  document.getElementById('r-total').textContent = `/ ${total}`;
+  document.getElementById('r-marking').innerHTML = `
+    <span style="color:var(--primary)">✅ সঠিক: ${correct}</span>
+    <span style="color:var(--danger)">❌ ভুল: ${wrong}</span>
+    <span style="color:var(--accent)">⭐ নম্বর: ${finalScore}/${total * mPerQ}</span>`;
+
+  // গ্রেড লজিক
+  let grade = '', msg = '', gradeColor = '';
+  if (pct >= 90) { grade='A+'; msg='অসাধারণ! তুমি দুর্দান্ত! 🏆'; gradeColor='var(--accent)'; }
+  else if (pct >= 80) { grade='A'; msg='চমৎকার! খুব ভালো করেছ! 🌟'; gradeColor='var(--primary)'; }
+  else if (pct >= 70) { grade='B'; msg='বেশ ভালো! আরেকটু চর্চা করো 📚'; gradeColor='var(--info)'; }
+  else if (pct >= 60) { grade='C'; msg='চেষ্টা ভালো! আরও পড়াশোনা করো 📖'; gradeColor='#f4a261'; }
+  else { grade='F'; msg='হতাশ হয়ো না! আবার চেষ্টা করো 💪'; gradeColor='var(--danger)'; }
+
+  const gradeEl = document.getElementById('r-grade');
+  const msgEl = document.getElementById('r-message');
+  const scoreEl = document.getElementById('r-score');
+
+  if (gradeEl) gradeEl.innerHTML = `<span style="color:${gradeColor}">${grade} — ${pct}%</span>`;
+  if (msgEl) msgEl.textContent = msg;
+  if (scoreEl) scoreEl.style.color = gradeColor;
+  // ডেটা সেভিং উইথ এরর হ্যান্ডলিং
+  if (auth.currentUser) {
+    try {
+      if (typeof addPoints === 'function') {
+        const pointsToGain = Math.max(0, finalScore);
+        addPoints(auth.currentUser.uid, pointsToGain, 'quiz_completed');
+      }
+
+      await db.collection('quizResults').add({
+        userId: auth.currentUser.uid,
+        quizId: currentQuiz.id || 'unknown',
+        quizName: currentQuiz.name || 'Untitled Quiz',
+        score: finalScore,
+        totalMarks: total * mPerQ,
+        percent: pct,
+        completedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (e) {
+      console.error("Data saving failed:", e.message);
+    }
+  }
+  // রিভিউ সেকশন রেন্ডারিং
+  const letters = ['ক', 'খ', 'গ', 'ঘ'];
+  const reviewList = document.getElementById('review-list');
+  if (reviewList) {
+    reviewList.innerHTML = currentQuiz.questions.map((q, i) => {
+      const chosen = userAnswers[i];
+      const correctIdx = parseInt(q.correctAnswer);
+      const isRight = chosen === correctIdx;
+      const options = [q.optionA, q.optionB, q.optionC, q.optionD];
+      return `
+        <div class="review-item ${isRight ? 'correct' : 'wrong'}">
+          <div class="q-text">${i + 1}. ${q.question}</div>
+          <div class="ans-row">
+            ${isRight
+              ? `<span class="correct-ans">✅ ${letters[correctIdx]}. ${options[correctIdx]}</span>`
+              : `<span class="wrong-ans">${chosen >= 0 ? letters[chosen] + '. ' + options[chosen] : 'উত্তর দাওনি'}</span> ➔ <span class="correct-ans">✅ ${letters[correctIdx]}. ${options[correctIdx]}</span>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+  }
+}
+
+function restartQuiz() {
+  startQuiz(currentQuiz.id);
+}
+
+function showQuizHub() {
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('quiz-play').style.display   = 'none';
+  document.getElementById('quiz-hub').style.display    = '';
+  document.getElementById('nav-quiz-title').textContent = 'কুইজ';
+}
+
+// ===== ADD QUIZ (Admin) =====
+function openAddQuiz() {
+  const subjSel = document.getElementById('quiz-subj');
+  const clsSel  = document.getElementById('quiz-cls');
+  if (subjSel.options.length <= 1) {
+    SUBJECTS.filter(s=>s!=='সব বিষয়').forEach(s => subjSel.appendChild(new Option(s,s)));
+    CLASSES.filter(c=>c!=='সব ক্লাস').forEach(c => clsSel.appendChild(new Option(c,c)));
+  }
+  document.getElementById('questions-container').innerHTML = '';
+  qCount = 0;
+  addQuestionField();
+  document.getElementById('add-quiz-modal').classList.add('open');
+}
+function closeAddQuiz() { document.getElementById('add-quiz-modal').classList.remove('open'); }
+
+function addQuestionField() {
+  qCount++;
+  const n = qCount;
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.style.marginBottom = '12px';
+  div.id = `q-field-${n}`;
+  div.innerHTML = `
+    <div style="font-weight:600;font-size:.85rem;margin-bottom:10px;display:flex;justify-content:space-between">
+      প্রশ্ন ${n}
+      ${n > 1 ? `<button class="btn-icon" style="font-size:14px" onclick="document.getElementById('q-field-${n}').remove()">✕</button>` : ''}
+    </div>
+    <input type="text" class="form-control mb-8" placeholder="প্রশ্ন লিখুন" id="q${n}-text" style="margin-bottom:8px">
+    <div class="options-grid">
+      <input type="text" class="form-control" placeholder="ক. বিকল্প ১" id="q${n}-a">
+      <input type="text" class="form-control" placeholder="খ. বিকল্প ২" id="q${n}-b">
+      <input type="text" class="form-control" placeholder="গ. বিকল্প ৩" id="q${n}-c">
+      <input type="text" class="form-control" placeholder="ঘ. বিকল্প ৪" id="q${n}-d">
+    </div>
+    <div class="form-group" style="margin-top:10px;margin-bottom:0">
+      <label class="form-label">সঠিক উত্তর</label>
+      <select class="form-control" id="q${n}-correct">
+        <option value="0">ক</option><option value="1">খ</option>
+        <option value="2">গ</option><option value="3">ঘ</option>
+      </select>
+    </div>
+  `;
+  document.getElementById('questions-container').appendChild(div);
+}
+
+async function createQuiz() {
+  const name = document.getElementById('quiz-name').value.trim();
+  const subj = document.getElementById('quiz-subj').value;
+  const cls  = document.getElementById('quiz-cls').value;
+  const time = document.getElementById('quiz-time').value;
+const marksPerQ = parseInt(document.getElementById('new-quiz-marks').value) || 5;
+const negMark = parseInt(document.getElementById('new-quiz-negative').value) || 0;
+  if (!name || !subj) return showToast('নাম ও বিষয় দিন', 'error');
+
+  const questions = [];
+  for (let i = 1; i <= qCount; i++) {
+    const el = document.getElementById(`q-field-${i}`);
+    if (!el) continue;
+    const qText = document.getElementById(`q${i}-text`).value.trim();
+    if (!qText) continue;
+    questions.push({
+      question: qText,
+      optionA: document.getElementById(`q${i}-a`).value.trim(),
+      optionB: document.getElementById(`q${i}-b`).value.trim(),
+      optionC: document.getElementById(`q${i}-c`).value.trim(),
+      optionD: document.getElementById(`q${i}-d`).value.trim(),
+      correctAnswer: document.getElementById(`q${i}-correct`).value
+    });
+  }
+  if (questions.length === 0) return showToast('কমপক্ষে একটি প্রশ্ন দিন', 'error');
+
+  const btn = document.getElementById('btn-create-quiz');
+  setButtonLoading(btn, true, 'তৈরি হচ্ছে...');
+  try {
+        // নাম, সাবজেক্ট এবং ক্লাস মিলিয়ে কি-ওয়ার্ড তৈরি করো
+    const searchKeywords = generateKeywords(`${name} ${subj} ${cls}`);
+
+    await db.collection('quizzes').add({
+      name, 
+      subject: subj, 
+      class: cls, 
+      questions,
+      timePerQuestion: parseInt(time),
+      marksPerQuestion: marksPerQ, // তোর আগের কোড ঠিক থাকলো
+      negativeMark: negMark,       // তোর আগের কোড ঠিক থাকলো
+      keywords: searchKeywords,    // নতুন অ্যাড হলো সার্চের জন্য
+      createdBy: auth.currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showToast('কুইজ তৈরি হয়েছে! 🎉', 'success');
+    closeAddQuiz();
+    loadQuizzes();
+  } catch(e) { showToast('তৈরি করা সম্ভব হয়নি', 'error'); }
+  setButtonLoading(btn, false, '✅ কুইজ তৈরি করুন');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
