@@ -1088,3 +1088,26 @@ select.form-control { cursor: pointer; appearance: none; background-image: url("
         display: none; /* খুব ছোট ফোনে শুধু লোগো দেখাবে, নাম না */
     }
 }
+.icon-sm {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2px;
+  vertical-align: middle;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #fee2e2; /* হালকা লাল ব্যাকগ্রাউন্ড */
+}
+
+.delete-btn:hover .icon-sm {
+  color: var(--danger); /* আইকন লাল হবে */
+}
