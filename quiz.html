@@ -397,28 +397,40 @@ function nextQuestion() {
   else showQuestion();
 }
 
-async function showResult() {
+async function showResult() { // ছোট হাতের a ব্যবহার করবি
   clearInterval(timerInterval);
-  document.getElementById('quiz-play').style.display = 'none';
-  document.getElementById('quiz-result').style.display = '';
+  
+  // UI কন্টেইনার ম্যানেজমেন্ট
+  const quizPlay = document.getElementById('quiz-play');
+  const quizResult = document.getElementById('quiz-result');
+  if (quizPlay) quizPlay.style.display = 'none';
+  if (quizResult) quizResult.style.display = 'block';
 
   const total = currentQuiz.questions.length;
   let correct = 0;
+
+  // সঠিক উত্তর গণনা (Clean Loop)
   currentQuiz.questions.forEach((q, i) => {
-    if (userAnswers[i] === parseInt(q.correctAnswer)) correct++;
+    if (userAnswers[i] !== undefined && parseInt(userAnswers[i]) === parseInt(q.correctAnswer)) {
+      correct++;
+    }
   });
+
   const pct = total ? Math.round((correct / total) * 100) : 0;
+  const wrong = total - correct; // সিম্পল এবং নির্ভুল লজিক
+  const mPerQ = parseInt(currentQuiz.marksPerQuestion) || 5;
+  const nMark = parseInt(currentQuiz.negativeMark) || 0;
+  const finalScore = (correct * mPerQ) - (wrong * nMark);
 
-  const wrong = userAnswers.filter(a => a !== parseInt(currentQuiz.questions[userAnswers.indexOf(a)]?.correctAnswer)).length;
-document.getElementById('r-score').textContent = correct;
-document.getElementById('r-total').textContent  = `/ ${total}`;
-const mPerQ = currentQuiz.marksPerQuestion || 5, nMark = currentQuiz.negativeMark || 0;
-const finalScore = (correct * mPerQ) - (wrong * nMark);
-document.getElementById('r-marking').innerHTML =
-  `<span style="color:var(--primary)">✅ সঠিক: ${correct}</span>
-   <span style="color:var(--danger)">❌ ভুল: ${wrong}</span>
-   <span style="color:var(--accent)">⭐ নম্বর: ${finalScore}/${total * mPerQ}</span>`;
+  // রেজাল্ট আপডেট
+  document.getElementById('r-score').textContent = correct;
+  document.getElementById('r-total').textContent = `/ ${total}`;
+  document.getElementById('r-marking').innerHTML = `
+    <span style="color:var(--primary)">✅ সঠিক: ${correct}</span>
+    <span style="color:var(--danger)">❌ ভুল: ${wrong}</span>
+    <span style="color:var(--accent)">⭐ নম্বর: ${finalScore}/${total * mPerQ}</span>`;
 
+  // গ্রেড লজিক
   let grade = '', msg = '', gradeColor = '';
   if (pct >= 90) { grade='A+'; msg='অসাধারণ! তুমি দুর্দান্ত! 🏆'; gradeColor='var(--accent)'; }
   else if (pct >= 80) { grade='A'; msg='চমৎকার! খুব ভালো করেছ! 🌟'; gradeColor='var(--primary)'; }
@@ -426,44 +438,55 @@ document.getElementById('r-marking').innerHTML =
   else if (pct >= 60) { grade='C'; msg='চেষ্টা ভালো! আরও পড়াশোনা করো 📖'; gradeColor='#f4a261'; }
   else { grade='F'; msg='হতাশ হয়ো না! আবার চেষ্টা করো 💪'; gradeColor='var(--danger)'; }
 
-  document.getElementById('r-grade').innerHTML = `<span style="color:${gradeColor}">${grade} — ${pct}%</span>`;
-  document.getElementById('r-message').textContent = msg;
-  document.getElementById('r-score').style.color = gradeColor;
+  const gradeEl = document.getElementById('r-grade');
+  const msgEl = document.getElementById('r-message');
+  const scoreEl = document.getElementById('r-score');
 
-  // Save score
+  if (gradeEl) gradeEl.innerHTML = `<span style="color:${gradeColor}">${grade} — ${pct}%</span>`;
+  if (msgEl) msgEl.textContent = msg;
+  if (scoreEl) scoreEl.style.color = gradeColor;
+  // ডেটা সেভিং উইথ এরর হ্যান্ডলিং
   if (auth.currentUser) {
-  const points = Math.max(0, (correct * (currentQuiz.marksPerQuestion || 5)) - (wrong * (currentQuiz.negativeMark || 0)));
-  if (typeof addPoints === 'function') {
-  if (typeof addPoints === 'function') {
-  await addPoints(auth.currentUser.uid, points, 'quiz_completed');
-  }
-  }
-    await db.collection('quizResults').add({
-      userId: auth.currentUser.uid,
-      quizId: currentQuiz.id,
-      quizName: currentQuiz.name,
-      score: finalScore, total: (total * mPerQ), percent: pct,
-      completedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
+    try {
+      if (typeof addPoints === 'function') {
+        const pointsToGain = Math.max(0, finalScore);
+        addPoints(auth.currentUser.uid, pointsToGain, 'quiz_completed');
+      }
 
-  // Review
+      await db.collection('quizResults').add({
+        userId: auth.currentUser.uid,
+        quizId: currentQuiz.id || 'unknown',
+        quizName: currentQuiz.name || 'Untitled Quiz',
+        score: finalScore,
+        totalMarks: total * mPerQ,
+        percent: pct,
+        completedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (e) {
+      console.error("Data saving failed:", e.message);
+    }
+  }
+  // রিভিউ সেকশন রেন্ডারিং
   const letters = ['ক', 'খ', 'গ', 'ঘ'];
-  document.getElementById('review-list').innerHTML = currentQuiz.questions.map((q, i) => {
-    const chosen  = userAnswers[i];
-    const correct_ = parseInt(q.correctAnswer);
-    const isRight = chosen === correct_;
-    const options = [q.optionA, q.optionB, q.optionC, q.optionD];
-    return `<div class="review-item ${isRight ? 'correct' : 'wrong'}">
-      <div class="q-text">${i+1}. ${q.question}</div>
-      <div class="ans-row">
-        ${isRight
-          ? `<span class="correct-ans">✅ ${letters[correct_]}. ${options[correct_]}</span>`
-          : `<span class="wrong-ans">${chosen>=0?letters[chosen]+'. '+options[chosen]:'সময় শেষ'}</span>&nbsp;&nbsp;<span class="correct-ans">✅ ${letters[correct_]}. ${options[correct_]}</span>`
-        }
-      </div>
-    </div>`;
-  }).join('');
+  const reviewList = document.getElementById('review-list');
+  if (reviewList) {
+    reviewList.innerHTML = currentQuiz.questions.map((q, i) => {
+      const chosen = userAnswers[i];
+      const correctIdx = parseInt(q.correctAnswer);
+      const isRight = chosen === correctIdx;
+      const options = [q.optionA, q.optionB, q.optionC, q.optionD];
+      return `
+        <div class="review-item ${isRight ? 'correct' : 'wrong'}">
+          <div class="q-text">${i + 1}. ${q.question}</div>
+          <div class="ans-row">
+            ${isRight
+              ? `<span class="correct-ans">✅ ${letters[correctIdx]}. ${options[correctIdx]}</span>`
+              : `<span class="wrong-ans">${chosen >= 0 ? letters[chosen] + '. ' + options[chosen] : 'উত্তর দাওনি'}</span> ➔ <span class="correct-ans">✅ ${letters[correctIdx]}. ${options[correctIdx]}</span>`
+            }
+          </div>
+        </div>`;
+    }).join('');
+  }
 }
 
 function restartQuiz() {
