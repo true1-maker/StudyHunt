@@ -1111,3 +1111,15 @@ select.form-control { cursor: pointer; appearance: none; background-image: url("
 .delete-btn:hover .icon-sm {
   color: var(--danger); /* আইকন লাল হবে */
 }
+/* টোস্ট আইকনের জন্য বাড়তি স্টাইল */
+.toast span:first-child {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.toast i {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5px;
+}
